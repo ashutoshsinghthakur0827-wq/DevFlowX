@@ -23,10 +23,13 @@ function Topbar({ openSidebar }) {
 
   return (
     <header className="topbar">
+      {/* Left Section */}
       <div className="topbar-left">
         <button
           className="mobile-menu-button"
           onClick={openSidebar}
+          aria-label="Open sidebar"
+          title="Open sidebar"
         >
           ☰
         </button>
@@ -37,20 +40,29 @@ function Topbar({ openSidebar }) {
         </div>
       </div>
 
+      {/* Right Section */}
       <div className="topbar-right">
+        {/* Theme Button */}
         <button
           className="icon-button"
           onClick={changeTheme}
           title="Change theme"
+          aria-label="Change theme"
         >
-          {theme === "dark" ? "☀" : "☾"}
+          {theme === "dark" ? "☀️" : "🌙"}
         </button>
 
-        <button className="notification-button">
-          ♧
-          <span></span>
+        {/* Notification Button */}
+        <button
+          className="notification-button"
+          title="Notifications"
+          aria-label="Notifications"
+        >
+          🔔
+          <span className="notification-dot"></span>
         </button>
 
+        {/* User Profile */}
         <div className="user-profile">
           <div className="user-avatar">AS</div>
 
