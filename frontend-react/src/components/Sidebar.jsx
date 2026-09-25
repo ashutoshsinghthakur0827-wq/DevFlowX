@@ -1,10 +1,11 @@
+
 import { NavLink } from "react-router-dom";
 
 function Sidebar({ isOpen, closeSidebar }) {
   const menuItems = [
     {
       name: "Dashboard",
-      path: "/",
+      path: "/dashboard",
       icon: "⌂",
     },
     {
@@ -41,6 +42,8 @@ function Sidebar({ isOpen, closeSidebar }) {
 
   return (
     <>
+      {/* Overlay */}
+
       {isOpen && (
         <div
           className="sidebar-overlay"
@@ -48,7 +51,15 @@ function Sidebar({ isOpen, closeSidebar }) {
         ></div>
       )}
 
-      <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
+      {/* Sidebar */}
+
+      <aside
+        className={`sidebar ${
+          isOpen ? "sidebar-open" : ""
+        }`}
+      >
+        {/* Brand */}
+
         <div className="brand">
           <div className="brand-logo">D</div>
 
@@ -58,28 +69,40 @@ function Sidebar({ isOpen, closeSidebar }) {
           </div>
         </div>
 
+        {/* Navigation */}
+
         <nav className="sidebar-navigation">
           {menuItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === "/"}
               onClick={closeSidebar}
               className={({ isActive }) =>
-                isActive ? "nav-link active" : "nav-link"
+                isActive
+                  ? "nav-link active"
+                  : "nav-link"
               }
             >
-              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-icon">
+                {item.icon}
+              </span>
+
               <span>{item.name}</span>
             </NavLink>
           ))}
         </nav>
 
+        {/* Bottom Section */}
+
         <div className="sidebar-bottom">
           <div className="upgrade-card">
             <span>✦</span>
+
             <h3>Build smarter</h3>
-            <p>Organize your development workflow.</p>
+
+            <p>
+              Organize your development workflow.
+            </p>
           </div>
 
           <p className="sidebar-footer">
