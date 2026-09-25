@@ -1,4 +1,4 @@
-const API_URL = "https://devflowx-zmlo.onrender.com/api";
+import API_URL from "../config/api";
 
 // Get all projects
 export async function getProjects() {
