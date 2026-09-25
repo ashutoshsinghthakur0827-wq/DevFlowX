@@ -1,16 +1,25 @@
+
 import API_URL from "../config/api";
 
+// AI API base URL
 const AI_API_URL = `${API_URL}/ai`;
 
-export async function askAI(question) {
+// ==================================================
+// ASK AI
+// ==================================================
+
+export async function askAI(question, history = []) {
   try {
     const response = await fetch(`${AI_API_URL}/ask`, {
       method: "POST",
+
       headers: {
         "Content-Type": "application/json",
       },
+
       body: JSON.stringify({
-        question,
+        message: question,
+        history: history,
       }),
     });
 
@@ -18,16 +27,24 @@ export async function askAI(question) {
 
     if (!response.ok) {
       throw new Error(
-        data.message || data.detail || "AI request failed"
+        data.message ||
+          data.detail ||
+          data.error ||
+          "AI request failed"
       );
     }
 
     return data;
   } catch (error) {
     console.error("AI request error:", error);
+
     throw error;
   }
 }
+
+// ==================================================
+// CHECK AI HEALTH
+// ==================================================
 
 export async function checkAIHealth() {
   try {
@@ -37,13 +54,20 @@ export async function checkAIHealth() {
 
     if (!response.ok) {
       throw new Error(
-        data.message || data.detail || "AI health check failed"
+        data.message ||
+          data.detail ||
+          data.error ||
+          "AI health check failed"
       );
     }
 
     return data;
   } catch (error) {
-    console.error("AI health check error:", error);
+    console.error(
+      "AI health check error:",
+      error
+    );
+
     throw error;
   }
 }
