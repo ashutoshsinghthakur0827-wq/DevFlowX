@@ -7,10 +7,7 @@ const dotenv = require("dotenv");
 // Load environment variables
 dotenv.config();
 
-// ===============================
-// IMPORT ROUTES
-// ===============================
-
+// Import routes
 const authRoutes = require("./routes/authRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const taskRoutes = require("./routes/taskRoutes");
@@ -18,90 +15,85 @@ const teamRoutes = require("./routes/teamRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const ragRoutes = require("./routes/ragRoutes");
 
-// ===============================
-// CREATE EXPRESS APP
-// ===============================
-
+// Create Express application
 const app = express();
 
-const PORT = process.env.PORT || 5000;
+// Environment variables
+const PORT = Number(process.env.PORT) || 5000;
+const MONGO_URI = process.env.MONGO_URI;
+const CLIENT_URL = process.env.CLIENT_URL;
 
-// ===============================
-// ENVIRONMENT VALIDATION
-// ===============================
-
-if (!process.env.MONGO_URI) {
-  console.error("❌ MONGO_URI is missing in .env");
+// Validate required environment variables
+if (!MONGO_URI) {
+  console.error("ERROR: MONGO_URI is missing in .env");
   process.exit(1);
 }
 
 if (!process.env.JWT_SECRET) {
-  console.error("❌ JWT_SECRET is missing in .env");
+  console.error("ERROR: JWT_SECRET is missing in .env");
   process.exit(1);
 }
 
-// ===============================
-// MIDDLEWARE
-// ===============================
+// Middleware
+
+// JSON request body
+app.use(express.json({ limit: "10mb" }));
+
+// URL encoded request body
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "10mb",
+  })
+);
+
+// CORS configuration
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  CLIENT_URL,
+].filter(Boolean);
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      // Allow requests without an origin
+      // Example: Postman or server-to-server requests
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error("CORS: Origin is not allowed")
+      );
+    },
     credentials: true,
   })
 );
 
-app.use(express.json());
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(
+    `${req.method} ${req.originalUrl}`
+  );
 
-app.use(express.urlencoded({ extended: true }));
+  next();
+});
 
-// ===============================
-// ROUTE VALIDATION FUNCTION
-// ===============================
-
-function validateRouter(routeName, routeHandler) {
-  console.log(`${routeName}: ${typeof routeHandler}`);
-
-  if (typeof routeHandler !== "function") {
-    throw new TypeError(
-      `${routeName} is invalid. Expected an Express router function.`
-    );
-  }
-}
-
-// ===============================
-// VALIDATE ALL ROUTES
-// ===============================
-
-console.log("========== ROUTE DEBUG ==========");
-
-validateRouter("authRoutes", authRoutes);
-validateRouter("projectRoutes", projectRoutes);
-validateRouter("taskRoutes", taskRoutes);
-validateRouter("teamRoutes", teamRoutes);
-validateRouter("aiRoutes", aiRoutes);
-validateRouter("ragRoutes", ragRoutes);
-
-console.log("=================================");
-
-// ===============================
-// ROOT ROUTE
-// ===============================
-
+// Root route
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    status: "healthy",
-    message: "Welcome to DevFlow X Backend",
-    service: "DevFlow X",
-    version: "1.0.0",
+    message: "DevFlow X backend is running",
+    service: "Express API",
   });
 });
 
-// ===============================
-// HEALTH CHECK ROUTE
-// ===============================
-
+// Health check route
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
@@ -114,83 +106,62 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// ===============================
-// API ROUTES
-// ===============================
-
+// API routes
 app.use("/api/auth", authRoutes);
-
 app.use("/api/projects", projectRoutes);
-
 app.use("/api/tasks", taskRoutes);
-
 app.use("/api/teams", teamRoutes);
-
 app.use("/api/ai", aiRoutes);
-
 app.use("/api/rag", ragRoutes);
 
-// ===============================
-// 404 HANDLER
-// ===============================
-
+// 404 route
 app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: "Route not found",
     path: req.originalUrl,
-    method: req.method,
   });
 });
 
-// ===============================
-// GLOBAL ERROR HANDLER
-// ===============================
-
+// Global error handler
 app.use((error, req, res, next) => {
-  console.error("❌ Server error:", error.message);
+  console.error("Global error:", error.message);
 
-  const statusCode = error.statusCode || 500;
+  if (error.message.includes("CORS")) {
+    return res.status(403).json({
+      success: false,
+      message: "CORS error: Origin is not allowed",
+    });
+  }
 
-  res.status(statusCode).json({
+  res.status(500).json({
     success: false,
-    message: error.message || "Internal server error",
+    message: "Internal server error",
+    error:
+      process.env.NODE_ENV === "production"
+        ? undefined
+        : error.message,
   });
 });
 
-// ===============================
-// CONNECT TO MONGODB
-// ===============================
-
-async function connectDatabase() {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-
-    console.log("✅ MongoDB connected successfully");
-  } catch (error) {
-    console.error("❌ MongoDB connection failed:", error.message);
-    throw error;
-  }
-}
-
-// ===============================
-// START SERVER
-// ===============================
-
+// Connect MongoDB and start server
 async function startServer() {
   try {
-    await connectDatabase();
+    await mongoose.connect(MONGO_URI);
 
-    app.listen(PORT, () => {
-      console.log("======================================");
-      console.log("🚀 DevFlow X Backend Started");
-      console.log(`🌐 Server: http://localhost:${PORT}`);
-      console.log(`❤️ Health: http://localhost:${PORT}/api/health`);
-      console.log("🗄️ Database: MongoDB");
-      console.log("======================================");
+    console.log("MongoDB connected successfully");
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(
+        `Server running on port ${PORT}`
+      );
     });
   } catch (error) {
-    console.error("❌ Server startup failed:", error.message);
+    console.error(
+      "MongoDB connection failed:",
+      error.message
+    );
+
     process.exit(1);
   }
 }
