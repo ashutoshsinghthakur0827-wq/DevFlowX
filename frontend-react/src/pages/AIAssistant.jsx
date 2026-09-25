@@ -1,10 +1,13 @@
 
 import { useRef, useState } from "react";
 
-// Express backend AI URL
+// Express backend API URL
 const API_URL =
   import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api/ai";
+  "https://devflowx-zmlo.onrender.com/api";
+
+// Remove trailing slash from API URL
+const BASE_URL = API_URL.replace(/\/$/, "");
 
 // Initial welcome message
 const initialMessage = {
@@ -15,15 +18,13 @@ const initialMessage = {
     "or your software projects.",
 };
 
-function AiAssistant() {
+function AIAssistant() {
   const [messages, setMessages] = useState([
     initialMessage,
   ]);
 
   const [question, setQuestion] = useState("");
-
   const [chatHistory, setChatHistory] = useState([]);
-
   const [loading, setLoading] = useState(false);
 
   const [healthStatus, setHealthStatus] =
@@ -44,15 +45,17 @@ function AiAssistant() {
     ]);
   }
 
-  // Check Express -> FastAPI health
+  // Check Express backend health
   async function checkAIHealth() {
     setHealthStatus("Checking...");
     setError("");
 
     try {
-      const response = await fetch(
-        `${API_URL}/health`
-      );
+      const healthURL = `${BASE_URL}/health`;
+
+      console.log("Checking AI health:", healthURL);
+
+      const response = await fetch(healthURL);
 
       const data = await response.json();
 
@@ -60,7 +63,7 @@ function AiAssistant() {
         throw new Error(
           data.message ||
             data.detail ||
-            "Health check failed"
+            `Health check failed: ${response.status}`
         );
       }
 
@@ -73,7 +76,7 @@ function AiAssistant() {
         setHealthStatus(
           data.message ||
             data.status ||
-            "AI service is not configured"
+            "AI service is connected"
         );
       }
     } catch (healthError) {
@@ -91,7 +94,7 @@ function AiAssistant() {
     }
   }
 
-  // Send question to Express backend
+  // Send question to Express AI backend
   async function askAI() {
     const trimmedQuestion = question.trim();
 
@@ -113,21 +116,24 @@ function AiAssistant() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_URL}/ask`,
-        {
-          method: "POST",
+      // Correct production AI endpoint:
+      // /api/ai/ask
+      const aiURL = `${BASE_URL}/ai/ask`;
 
-          headers: {
-            "Content-Type": "application/json",
-          },
+      console.log("Sending AI request:", aiURL);
 
-          body: JSON.stringify({
-            message: trimmedQuestion,
-            history: chatHistory,
-          }),
-        }
-      );
+      const response = await fetch(aiURL, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          message: trimmedQuestion,
+          history: chatHistory,
+        }),
+      });
 
       const data = await response.json();
 
@@ -135,18 +141,22 @@ function AiAssistant() {
         throw new Error(
           data.message ||
             data.detail ||
-            "AI request failed"
+            data.error ||
+            `AI request failed: ${response.status}`
         );
       }
 
       const aiReply =
         data.reply ||
+        data.response ||
+        data.answer ||
+        data.message ||
         "The AI returned an empty response.";
 
       // Display AI response
       addMessage("assistant", aiReply);
 
-      // Update history
+      // Update chat history
       const updatedHistory = [
         ...chatHistory,
 
@@ -161,9 +171,8 @@ function AiAssistant() {
         },
       ];
 
-      setChatHistory(
-        updatedHistory.slice(-20)
-      );
+      // Keep the last 20 messages
+      setChatHistory(updatedHistory.slice(-20));
     } catch (chatError) {
       console.error(
         "AI chat error:",
@@ -213,6 +222,7 @@ function AiAssistant() {
     setChatHistory([]);
     setQuestion("");
     setError("");
+    setHealthStatus("Not checked");
   }
 
   return (
@@ -231,11 +241,13 @@ function AiAssistant() {
         </div>
       </div>
 
+      {/* AI Health Check */}
       <div className="ai-health-row">
         <button
           type="button"
           className="primary-button"
           onClick={checkAIHealth}
+          disabled={loading}
         >
           Check AI Health
         </button>
@@ -246,6 +258,7 @@ function AiAssistant() {
       </div>
 
       <div className="ai-layout">
+        {/* Chat Section */}
         <div className="ai-chat-card">
           <div className="ai-card-header">
             <div className="ai-avatar">
@@ -262,6 +275,7 @@ function AiAssistant() {
             </div>
           </div>
 
+          {/* Chat Messages */}
           <div
             className="chat-messages"
             aria-live="polite"
@@ -300,6 +314,7 @@ function AiAssistant() {
             )}
           </div>
 
+          {/* Chat Input */}
           <div className="chat-input-area">
             <label htmlFor="ai-question">
               Your Question
@@ -360,6 +375,7 @@ function AiAssistant() {
           </div>
         </div>
 
+        {/* Suggestions Section */}
         <aside className="ai-suggestions-card">
           <h3>Try asking</h3>
 
@@ -428,4 +444,4 @@ function AiAssistant() {
   );
 }
 
-export default AiAssistant;
+export default AIAssistant;
