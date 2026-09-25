@@ -1,5 +1,4 @@
-
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://devflowx-zmlo.onrender.com/api";
 
 // Get all projects
 export async function getProjects() {
