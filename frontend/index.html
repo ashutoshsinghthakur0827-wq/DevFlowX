@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>DevFlow X | AI Engineering Workspace</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="app-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="brand-logo">D</div>
+
+                <div>
+                    <h2>DevFlow <span>X</span></h2>
+                    <p>Engineering Workspace</p>
+                </div>
+            </div>
+
+            <nav class="navigation">
+                <p class="nav-title">WORKSPACE</p>
+
+                <button class="nav-item active" data-page="dashboard">
+                    <span>⌂</span> Dashboard
+                </button>
+
+                <button class="nav-item" data-page="projects">
+                    <span>▣</span> Projects
+                </button>
+
+                <button class="nav-item" data-page="tasks">
+                    <span>✓</span> Tasks
+                </button>
+
+                <button class="nav-item" data-page="team">
+                    <span>♧</span> Team
+                </button>
+
+                <p class="nav-title">INSIGHTS</p>
+
+                <button class="nav-item" data-page="analytics">
+                    <span>▥</span> Analytics
+                </button>
+
+                <button class="nav-item" data-page="ai">
+                    <span>✦</span> AI Assistant
+                </button>
+
+                <p class="nav-title">SYSTEM</p>
+
+                <button class="nav-item" data-page="settings">
+                    <span>⚙</span> Settings
+                </button>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="upgrade-card">
+                    <span class="upgrade-icon">✦</span>
+                    <h3>AI Workspace</h3>
+                    <p>Prepare your projects for intelligent automation.</p>
+                    <button onclick="showPage('ai')">Explore AI →</button>
+                </div>
+
+                <div class="sidebar-user">
+                    <div class="avatar">AS</div>
+                    <div>
+                        <strong>Ashutosh Singh</strong>
+                        <small>Developer</small>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-button" id="menuButton">☰</button>
+
+                    <div>
+                        <p class="topbar-label">WORKSPACE / OVERVIEW</p>
+                        <h1 id="pageTitle">Dashboard</h1>
+                    </div>
+                </div>
+
+                <div class="topbar-actions">
+                    <button class="icon-button" id="themeButton" title="Change theme">
+                        ☾
+                    </button>
+
+                    <button class="icon-button" id="notificationButton">
+                        ♧
+                    </button>
+
+                    <div class="profile-box">
+                        <div class="avatar">AS</div>
+                        <div class="profile-text">
+                            <strong>Ashutosh</strong>
+                            <small>Developer</small>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dynamic Pages -->
+            <div class="page-container">
+
+                <!-- Dashboard Page -->
+                <section class="page active-page" id="dashboard-page">
+
+                    <div class="welcome-section">
+                        <div>
+                            <p class="eyebrow">FRIDAY, SEPTEMBER 25, 2026</p>
+                            <h2>Welcome back, Ashutosh 👋</h2>
+                            <p class="muted">
+                                Track your engineering workflow and build something amazing.
+                            </p>
+                        </div>
+
+                        <button class="primary-button" id="dashboardProjectButton">
+                            + New Project
+                        </button>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="stats-grid">
+
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <span class="stat-label">Total Projects</span>
+                                <span class="stat-icon purple">▣</span>
+                            </div>
+
+                            <h3 id="totalProjects">0</h3>
+                            <p class="stat-footer">Active workspace projects</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <span class="stat-label">Total Tasks</span>
+                                <span class="stat-icon blue">✓</span>
+                            </div>
+
+                            <h3 id="totalTasks">0</h3>
+                            <p class="stat-footer">Tasks across all projects</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <span class="stat-label">Completed Tasks</span>
+                                <span class="stat-icon green">✓</span>
+                            </div>
+
+                            <h3 id="completedTasks">0</h3>
+                            <p class="stat-footer">Successfully completed</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <span class="stat-label">Completion Rate</span>
+                                <span class="stat-icon orange">↗</span>
+                            </div>
+
+                            <h3 id="completionRate">0%</h3>
+                            <p class="stat-footer">Overall task progress</p>
+                        </div>
+
+                    </div>
+
+                    <!-- Dashboard Grid -->
+                    <div class="dashboard-grid">
+
+                        <!-- Projects -->
+                        <div class="content-card large-card">
+                            <div class="card-header">
+                                <div>
+                                    <h3>Recent Projects</h3>
+                                    <p class="muted">Your latest workspace projects</p>
+                                </div>
+
+                                <button class="text-button" onclick="showPage('projects')">
+                                    View All →
+                                </button>
+                            </div>
+
+                            <div id="recentProjects" class="project-list"></div>
+                        </div>
+
+                        <!-- Activity -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div>
+                                    <h3>Activity</h3>
+                                    <p class="muted">Recent workspace activity</p>
+                                </div>
+                            </div>
+
+                            <div id="activityList" class="activity-list"></div>
+                        </div>
+
+                    </div>
+
+                    <!-- Tasks and AI -->
+                    <div class="dashboard-grid bottom-grid">
+
+                        <div class="content-card large-card">
+                            <div class="card-header">
+                                <div>
+                                    <h3>Recent Tasks</h3>
+                                    <p class="muted">Keep track of your work</p>
+                                </div>
+
+                                <button class="text-button" onclick="showPage('tasks')">
+                                    View All →
+                                </button>
+                            </div>
+
+                            <div id="recentTasks" class="task-list"></div>
+                        </div>
+
+                        <div class="content-card ai-card">
+                            <div class="ai-symbol">✦</div>
+                            <h3>DevFlow AI</h3>
+                            <p>
+                                Get intelligent suggestions for your development workflow.
+                            </p>
+
+                            <button class="primary-button" onclick="showPage('ai')">
+                                Open AI Assistant
+                            </button>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Projects Page -->
+                <section class="page" id="projects-page">
+
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">WORKSPACE</p>
+                            <h2>Projects</h2>
+                            <p class="muted">Create and manage your projects.</p>
+                        </div>
+
+                        <button class="primary-button" id="projectsAddButton">
+                            + New Project
+                        </button>
+                    </div>
+
+                    <div class="toolbar">
+                        <input
+                            type="text"
+                            id="projectSearch"
+                            placeholder="Search projects..."
+                        >
+                    </div>
+
+                    <div id="allProjects" class="projects-grid"></div>
+                </section>
+
+                <!-- Tasks Page -->
+                <section class="page" id="tasks-page">
+
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">WORKSPACE</p>
+                            <h2>Tasks</h2>
+                            <p class="muted">Manage your development tasks.</p>
+                        </div>
+
+                        <button class="primary-button" id="tasksAddButton">
+                            + New Task
+                        </button>
+                    </div>
+
+                    <div class="filter-row">
+                        <button class="filter-button active" data-filter="all">
+                            All
+                        </button>
+
+                        <button class="filter-button" data-filter="pending">
+                            Pending
+                        </button>
+
+                        <button class="filter-button" data-filter="completed">
+                            Completed
+                        </button>
+                    </div>
+
+                    <div id="allTasks" class="task-page-list"></div>
+                </section>
+
+                <!-- Team Page -->
+                <section class="page" id="team-page">
+
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">COLLABORATION</p>
+                            <h2>Team</h2>
+                            <p class="muted">Your workspace team members.</p>
+                        </div>
+                    </div>
+
+                    <div class="team-grid">
+                        <div class="team-card">
+                            <div class="team-avatar">AS</div>
+                            <h3>Ashutosh Singh</h3>
+                            <p>Project Developer</p>
+                            <span class="status-badge success">Active</span>
+                        </div>
+
+                        <div class="team-card">
+                            <div class="team-avatar blue-bg">AI</div>
+                            <h3>AI Assistant</h3>
+                            <p>Automation Assistant</p>
+                            <span class="status-badge success">Available</span>
+                        </div>
+
+                        <div class="team-card">
+                            <div class="team-avatar orange-bg">GH</div>
+                            <h3>GitHub Integration</h3>
+                            <p>Version Control</p>
+                            <span class="status-badge warning">Coming Soon</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Analytics Page -->
+                <section class="page" id="analytics-page">
+
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">INSIGHTS</p>
+                            <h2>Analytics</h2>
+                            <p class="muted">Understand your project progress.</p>
+                        </div>
+                    </div>
+
+                    <div class="analytics-grid">
+                        <div class="content-card">
+                            <h3>Task Completion</h3>
+                            <div class="progress-circle" id="analyticsCircle">
+                                <span id="analyticsPercentage">0%</span>
+                            </div>
+                            <p class="muted center-text">
+                                Overall task completion
+                            </p>
+                        </div>
+
+                        <div class="content-card">
+                            <h3>Workspace Summary</h3>
+
+                            <div class="summary-row">
+                                <span>Projects</span>
+                                <strong id="analyticsProjects">0</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Total Tasks</span>
+                                <strong id="analyticsTasks">0</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Completed</span>
+                                <strong id="analyticsCompleted">0</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Pending</span>
+                                <strong id="analyticsPending">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Page -->
+                <section class="page" id="ai-page">
+
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">INTELLIGENCE</p>
+                            <h2>AI Assistant</h2>
+                            <p class="muted">
+                                Try the DevFlow X AI demonstration.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="ai-workspace">
+                        <div class="ai-header">
+                            <div class="ai-large-icon">✦</div>
+                            <div>
+                                <h3>DevFlow AI Assistant</h3>
+                                <p class="muted">Prototype mode • Local demo</p>
+                            </div>
+                        </div>
+
+                        <div class="ai-suggestions">
+                            <button class="suggestion-button" data-question="How can I improve my project?">
+                                Improve my project
+                            </button>
+
+                            <button class="suggestion-button" data-question="Give me a task planning strategy.">
+                                Plan my tasks
+                            </button>
+
+                            <button class="suggestion-button" data-question="Explain how AI can help developers.">
+                                AI for developers
+                            </button>
+                        </div>
+
+                        <div class="ai-chat" id="aiChat">
+                            <div class="chat-message assistant-message">
+                                Hello Ashutosh! I am your DevFlow AI demo assistant.
+                                Ask me a question about your project or tasks.
+                            </div>
+                        </div>
+
+                        <div class="ai-input-row">
+                            <input
+                                type="text"
+                                id="aiInput"
+                                placeholder="Ask something..."
+                            >
+
+                            <button class="primary-button" id="aiSendButton">
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Page -->
+                <section class="page" id="settings-page">
+
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">SYSTEM</p>
+                            <h2>Settings</h2>
+                            <p class="muted">Manage your local application settings.</p>
+                        </div>
+                    </div>
+
+                    <div class="content-card settings-card">
+                        <h3>Appearance</h3>
+
+                        <div class="setting-row">
+                            <div>
+                                <strong>Theme</strong>
+                                <p class="muted">
+                                    Switch between light and dark mode.
+                                </p>
+                            </div>
+
+                            <button class="secondary-button" id="settingsThemeButton">
+                                Change Theme
+                            </button>
+                        </div>
+
+                        <div class="setting-row">
+                            <div>
+                                <strong>Reset Demo Data</strong>
+                                <p class="muted">
+                                    Remove created projects and tasks.
+                                </p>
+                            </div>
+
+                            <button class="danger-button" id="resetDataButton">
+                                Reset Data
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Project Modal -->
+    <div class="modal-overlay" id="projectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Create New Project</h3>
+                <button class="close-button" data-close="projectModal">×</button>
+            </div>
+
+            <form id="projectForm">
+                <label for="projectName">Project Name</label>
+                <input
+                    type="text"
+                    id="projectName"
+                    placeholder="Example: AI Resume Builder"
+                    required
+                >
+
+                <label for="projectDescription">Description</label>
+                <textarea
+                    id="projectDescription"
+                    placeholder="Write a short project description"
+                    required
+                ></textarea>
+
+                <label for="projectStatus">Status</label>
+                <select id="projectStatus">
+                    <option value="Planning">Planning</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+
+                <button class="primary-button full-width" type="submit">
+                    Create Project
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Create New Task</h3>
+                <button class="close-button" data-close="taskModal">×</button>
+            </div>
+
+            <form id="taskForm">
+                <label for="taskTitle">Task Title</label>
+                <input
+                    type="text"
+                    id="taskTitle"
+                    placeholder="Example: Create login page"
+                    required
+                >
+
+                <label for="taskProject">Project</label>
+                <select id="taskProject" required></select>
+
+                <label for="taskPriority">Priority</label>
+                <select id="taskPriority">
+                    <option value="Low">Low</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="High">High</option>
+                </select>
+
+                <button class="primary-button full-width" type="submit">
+                    Create Task
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

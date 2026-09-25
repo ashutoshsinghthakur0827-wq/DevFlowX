@@ -1,0 +1,30 @@
+{
+  "name": "devflow-x-backend",
+  "version": "1.0.0",
+  "description": "Backend API for DevFlow X",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": [
+    "devflow",
+    "express",
+    "backend",
+    "api"
+  ],
+  "author": "Ashutosh Singh",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.20.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.10.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

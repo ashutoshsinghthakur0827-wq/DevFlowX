@@ -1,0 +1,10 @@
+DevFlow X is an AI-powered software engineering management platform.
+
+The frontend uses React and Vite.
+The backend uses Node.js and Express.
+MongoDB is used for database storage.
+FastAPI provides the AI service.
+LangChain is used for RAG workflows.
+ChromaDB stores document embeddings.
+Groq provides language model responses.
+HuggingFace Embeddings converts text into vectors.
