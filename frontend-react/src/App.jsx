@@ -9,17 +9,11 @@ import {
 import { useApp } from "./context/AppContext";
 import API_URL from "./config/api";
 
-// ==================================================
-// LAYOUT COMPONENTS
-// ==================================================
-
+// Layout Components
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 
-// ==================================================
-// PAGES
-// ==================================================
-
+// Pages
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import Tasks from "./pages/Tasks";
@@ -29,38 +23,36 @@ import AIAssistant from "./pages/AIAssistant";
 import RAGAssistant from "./pages/RAGAssistant";
 import Settings from "./pages/Settings";
 
-// ==================================================
-// APP COMPONENT
-// ==================================================
-
 function App() {
   const { darkMode } = useApp();
 
+  // Mobile sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] =
+    useState(false);
+
+  // Backend state
   const [backendStatus, setBackendStatus] =
     useState("");
 
   const [checkingBackend, setCheckingBackend] =
     useState(false);
 
-  // ==================================================
-  // CHECK EXPRESS BACKEND
-  // ==================================================
+  // Close sidebar
+  function closeSidebar() {
+    setIsSidebarOpen(false);
+  }
 
+  // Check backend
   async function checkBackend() {
     setCheckingBackend(true);
     setBackendStatus("");
 
     try {
-      // General Express backend health endpoint
       const healthURL = `${API_URL}/health`;
 
-      console.log(
-        "Checking backend:",
-        healthURL
-      );
+      console.log("Checking backend:", healthURL);
 
       const response = await fetch(healthURL);
-
       const data = await response.json();
 
       if (!response.ok) {
@@ -72,15 +64,9 @@ function App() {
         );
       }
 
-      console.log(
-        "Backend connected:",
-        data
-      );
-
       setBackendStatus(
         `Connected: ${
-          data.message ||
-          "Backend is working"
+          data.message || "Backend is working"
         }`
       );
     } catch (error) {
@@ -97,10 +83,6 @@ function App() {
     }
   }
 
-  // ==================================================
-  // RETURN UI
-  // ==================================================
-
   return (
     <div
       className={
@@ -109,17 +91,32 @@ function App() {
           : "app light-theme"
       }
     >
-      {/* Sidebar */}
-      <Sidebar />
+      {/* Mobile Menu Button */}
 
-      {/* Main Application Area */}
+      <button
+        type="button"
+        className="mobile-menu-button"
+        onClick={() => setIsSidebarOpen(true)}
+        aria-label="Open navigation menu"
+      >
+        ☰
+      </button>
+
+      {/* Sidebar */}
+
+      <Sidebar
+        isOpen={isSidebarOpen}
+        closeSidebar={closeSidebar}
+      />
+
+      {/* Main Area */}
+
       <div className="main-area">
-        {/* Top Navigation */}
         <Topbar />
 
-        {/* Main Content */}
         <main className="page-content">
-          {/* Backend Connection Test */}
+          {/* Backend Test */}
+
           <div className="backend-test-container">
             <h3>Backend Connection</h3>
 
@@ -138,9 +135,9 @@ function App() {
             )}
           </div>
 
-          {/* Application Routes */}
+          {/* Routes */}
+
           <Routes>
-            {/* Default Route */}
             <Route
               path="/"
               element={
@@ -151,55 +148,46 @@ function App() {
               }
             />
 
-            {/* Dashboard */}
             <Route
               path="/dashboard"
               element={<Dashboard />}
             />
 
-            {/* Projects */}
             <Route
               path="/projects"
               element={<Projects />}
             />
 
-            {/* Tasks */}
             <Route
               path="/tasks"
               element={<Tasks />}
             />
 
-            {/* Team */}
             <Route
               path="/team"
               element={<Team />}
             />
 
-            {/* Analytics */}
             <Route
               path="/analytics"
               element={<Analytics />}
             />
 
-            {/* AI Assistant */}
             <Route
               path="/ai-assistant"
               element={<AIAssistant />}
             />
 
-            {/* RAG Assistant */}
             <Route
               path="/rag-assistant"
               element={<RAGAssistant />}
             />
 
-            {/* Settings */}
             <Route
               path="/settings"
               element={<Settings />}
             />
 
-            {/* Unknown Routes */}
             <Route
               path="*"
               element={
