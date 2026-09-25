@@ -1,44 +1,54 @@
-const API_URL = "http://localhost:5000/api/rag";
+import API_URL from "../config/api";
 
+const RAG_API_URL = `${API_URL}/rag`;
 
 export async function indexDocuments() {
-  const response = await fetch(`${API_URL}/index`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
+  try {
+    const response = await fetch(`${RAG_API_URL}/index`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || data.detail || "Document indexing failed"
+      );
     }
-  });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Document indexing failed"
-    );
+    return data;
+  } catch (error) {
+    console.error("Document indexing error:", error);
+    throw error;
   }
-
-  return data;
 }
 
-
 export async function askRAG(question) {
-  const response = await fetch(`${API_URL}/ask`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      question
-    })
-  });
+  try {
+    const response = await fetch(`${RAG_API_URL}/ask`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question,
+      }),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(
-      data.message || "RAG request failed"
-    );
+    if (!response.ok) {
+      throw new Error(
+        data.message || data.detail || "RAG request failed"
+      );
+    }
+
+    return data;
+  } catch (error) {
+    console.error("RAG request error:", error);
+    throw error;
   }
-
-  return data;
 }
