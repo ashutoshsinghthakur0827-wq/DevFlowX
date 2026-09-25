@@ -1,12 +1,6 @@
 
 import { useState } from "react";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-} from "react-router-dom";
-
-import { AppProvider } from "./context/AppContext.jsx";
+import { Routes, Route } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar.jsx";
 import Topbar from "./components/Topbar.jsx";
@@ -32,11 +26,12 @@ function AppLayout() {
 
   return (
     <div className="app-layout">
-      {/* Mobile overlay */}
+      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
           className="sidebar-overlay active"
           onClick={closeSidebar}
+          aria-label="Close sidebar"
         />
       )}
 
@@ -46,7 +41,7 @@ function AppLayout() {
         closeSidebar={closeSidebar}
       />
 
-      {/* Main section */}
+      {/* Main Application Layout */}
       <div className="main-layout">
         <Topbar openSidebar={openSidebar} />
 
@@ -83,6 +78,12 @@ function AppLayout() {
               path="/settings"
               element={<Settings />}
             />
+
+            {/* Fallback Route */}
+            <Route
+              path="*"
+              element={<Dashboard />}
+            />
           </Routes>
         </main>
       </div>
@@ -90,14 +91,4 @@ function AppLayout() {
   );
 }
 
-function App() {
-  return (
-    <AppProvider>
-      <BrowserRouter>
-        <AppLayout />
-      </BrowserRouter>
-    </AppProvider>
-  );
-}
-
-export default App;
+export default AppLayout;
