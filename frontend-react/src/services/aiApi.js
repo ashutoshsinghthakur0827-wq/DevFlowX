@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/ai";
+const API_URL = "https://devflowx-zmlo.onrender.com/api/ai";
 
 export async function askAI(question) {
   const response = await fetch(`${API_URL}/ask`, {
