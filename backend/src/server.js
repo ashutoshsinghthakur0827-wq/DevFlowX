@@ -4,10 +4,16 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 
-// Load environment variables
+// ==================================================
+// LOAD ENVIRONMENT VARIABLES
+// ==================================================
+
 dotenv.config();
 
-// Import routes
+// ==================================================
+// IMPORT ROUTES
+// ==================================================
+
 const authRoutes = require("./routes/authRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const taskRoutes = require("./routes/taskRoutes");
@@ -15,22 +21,37 @@ const teamRoutes = require("./routes/teamRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const ragRoutes = require("./routes/ragRoutes");
 
-// Create Express application
+// ==================================================
+// CREATE EXPRESS APPLICATION
+// ==================================================
+
 const app = express();
 
-// Environment variables
+// ==================================================
+// ENVIRONMENT VARIABLES
+// ==================================================
+
 const PORT = Number(process.env.PORT) || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 const CLIENT_URL = process.env.CLIENT_URL;
 
-// Validate required environment variables
+// ==================================================
+// VALIDATE REQUIRED ENVIRONMENT VARIABLES
+// ==================================================
+
 if (!MONGO_URI) {
-  console.error("ERROR: MONGO_URI is missing in environment variables");
+  console.error(
+    "ERROR: MONGO_URI is missing in environment variables"
+  );
+
   process.exit(1);
 }
 
 if (!process.env.JWT_SECRET) {
-  console.error("ERROR: JWT_SECRET is missing in environment variables");
+  console.error(
+    "ERROR: JWT_SECRET is missing in environment variables"
+  );
+
   process.exit(1);
 }
 
@@ -38,14 +59,14 @@ if (!process.env.JWT_SECRET) {
 // MIDDLEWARE
 // ==================================================
 
-// JSON request body
+// Parse JSON request body
 app.use(
   express.json({
     limit: "10mb",
   })
 );
 
-// URL encoded request body
+// Parse URL-encoded request body
 app.use(
   express.urlencoded({
     extended: true,
@@ -60,18 +81,26 @@ app.use(
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+
+  // Vercel frontend
   "https://dev-flow-x.vercel.app",
+
+  // Render frontend
   "https://devflowx-frontend.onrender.com",
+
+  // Environment variable frontend URL
   CLIENT_URL,
 ].filter(Boolean);
 
 // Remove duplicate origins
-const uniqueOrigins = [...new Set(allowedOrigins)];
+const uniqueOrigins = [
+  ...new Set(allowedOrigins),
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests without an Origin header.
-    // Example: Postman or server-to-server requests.
+    // Example: Postman and server-to-server requests.
     if (!origin) {
       return callback(null, true);
     }
@@ -83,7 +112,9 @@ const corsOptions = {
     console.log("Blocked CORS origin:", origin);
 
     return callback(
-      new Error(`CORS: Origin ${origin} is not allowed`)
+      new Error(
+        `CORS: Origin ${origin} is not allowed`
+      )
     );
   },
 
@@ -133,12 +164,13 @@ app.get("/", (req, res) => {
     success: true,
     message: "DevFlow X backend is running",
     service: "Express API",
-    environment: process.env.NODE_ENV || "development",
+    environment:
+      process.env.NODE_ENV || "development",
   });
 });
 
 // ==================================================
-// HEALTH CHECK ROUTE
+// GENERAL HEALTH CHECK
 // ==================================================
 
 app.get("/api/health", (req, res) => {
@@ -167,8 +199,12 @@ app.use("/api/tasks", taskRoutes);
 
 app.use("/api/teams", teamRoutes);
 
+// AI routes
+// GET  /api/ai/health
+// POST /api/ai/ask
 app.use("/api/ai", aiRoutes);
 
+// RAG routes
 app.use("/api/rag", ragRoutes);
 
 // ==================================================
@@ -188,17 +224,21 @@ app.use((req, res) => {
 // ==================================================
 
 app.use((error, req, res, next) => {
-  console.error("Global error:", error.message);
+  console.error(
+    "Global error:",
+    error.message
+  );
 
-  // CORS error
+  // Handle CORS errors
   if (error.message.startsWith("CORS:")) {
     return res.status(403).json({
       success: false,
-      message: "CORS error: Origin is not allowed",
+      message:
+        "CORS error: Origin is not allowed",
     });
   }
 
-  // General server error
+  // Handle general errors
   return res.status(500).json({
     success: false,
     message: "Internal server error",
@@ -217,11 +257,26 @@ async function startServer() {
   try {
     await mongoose.connect(MONGO_URI);
 
-    console.log("MongoDB connected successfully");
+    console.log(
+      "MongoDB connected successfully"
+    );
 
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+      console.log(
+        `Server running on port ${PORT}`
+      );
+
+      console.log(
+        `Environment: ${
+          process.env.NODE_ENV || "development"
+        }`
+      );
+
+      console.log(
+        `AI service configured: ${
+          Boolean(process.env.AI_SERVICE_URL)
+        }`
+      );
     });
   } catch (error) {
     console.error(
@@ -233,5 +288,8 @@ async function startServer() {
   }
 }
 
-// Start application
+// ==================================================
+// START APPLICATION
+// ==================================================
+
 startServer();
