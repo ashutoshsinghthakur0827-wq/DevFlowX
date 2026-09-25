@@ -8,7 +8,7 @@ import {
 
 import { useApp } from "./context/AppContext";
 import API_URL from "./config/api";
-
+import "./index.css";
 // Layout Components
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
