@@ -1660,3 +1660,204 @@ select:focus-visible {
 /* =========================================================
    END OF DEVFLOW X THEME
    ========================================================= */
+ =========================================
+   DEVFLOW X - MOBILE RESPONSIVE LAYOUT
+   ========================================= */
+
+@media (max-width: 768px) {
+
+  /* Main application layout */
+  .app-layout,
+  .app-container,
+  .dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 260px;
+    max-width: 85vw;
+
+    z-index: 1000;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  /* Show sidebar when opened */
+  .sidebar.open,
+  .sidebar.active,
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Sidebar navigation */
+  .sidebar nav,
+  .sidebar-navigation,
+  .nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+  }
+
+  /* Every navigation item remains visible */
+  .sidebar a,
+  .sidebar button,
+  .nav-item,
+  .navigation-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 14px;
+
+    white-space: normal;
+    visibility: visible;
+    opacity: 1;
+  }
+
+  /* Main content */
+  .main-content,
+  .main-container,
+  .page-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  /* Topbar */
+  .topbar,
+  .header {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 16px;
+  }
+
+  /* Dashboard cards */
+  .stats-grid,
+  .statistics-grid,
+  .dashboard-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+
+  /* Project and task cards */
+  .projects-grid,
+  .tasks-grid,
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    width: 100%;
+  }
+
+  /* Analytics sections */
+  .analytics-grid,
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    width: 100%;
+  }
+
+  /* Cards */
+  .card,
+  .project-card,
+  .task-card,
+  .analytics-card,
+  .ai-card,
+  .settings-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Tables */
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  /* AI Assistant */
+  .ai-assistant,
+  .ai-chat-container,
+  .chat-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Form inputs */
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Project/task forms */
+  .form-grid,
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Mobile menu button */
+  .mobile-menu-button,
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  /* Sidebar overlay */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+}
+
+/* Desktop: mobile menu hidden */
+@media (min-width: 769px) {
+  .mobile-menu-button,
+  .menu-toggle,
+  .sidebar-overlay {
+    display: none;
+  }
+}
