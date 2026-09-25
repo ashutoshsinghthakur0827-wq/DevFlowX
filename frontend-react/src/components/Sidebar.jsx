@@ -1,116 +1,119 @@
 
 import { NavLink } from "react-router-dom";
 
-function Sidebar({ isOpen, closeSidebar }) {
-  const menuItems = [
+function Sidebar({ sidebarOpen, closeSidebar }) {
+  const navigationItems = [
     {
-      name: "Dashboard",
       path: "/dashboard",
+      label: "Dashboard",
       icon: "⌂",
     },
     {
-      name: "Projects",
       path: "/projects",
+      label: "Projects",
       icon: "▣",
     },
     {
-      name: "Tasks",
       path: "/tasks",
+      label: "Tasks",
       icon: "✓",
     },
     {
-      name: "Team",
       path: "/team",
+      label: "Team",
       icon: "♟",
     },
     {
-      name: "Analytics",
       path: "/analytics",
+      label: "Analytics",
       icon: "▥",
     },
     {
-      name: "AI Assistant",
       path: "/ai-assistant",
+      label: "AI Assistant",
       icon: "✦",
     },
     {
-      name: "Settings",
       path: "/settings",
+      label: "Settings",
       icon: "⚙",
     },
   ];
 
   return (
-    <>
-      {/* Overlay */}
+    <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+      {/* Sidebar Header */}
+      <div className="sidebar-header">
+        <div className="sidebar-brand">
+          <div className="sidebar-logo">D</div>
 
-      {isOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={closeSidebar}
-        ></div>
-      )}
-
-      {/* Sidebar */}
-
-      <aside
-        className={`sidebar ${
-          isOpen ? "sidebar-open" : ""
-        }`}
-      >
-        {/* Brand */}
-
-        <div className="brand">
-          <div className="brand-logo">D</div>
-
-          <div>
+          <div className="sidebar-brand-text">
             <h2>DevFlow X</h2>
             <p>AI Workspace</p>
           </div>
         </div>
 
-        {/* Navigation */}
+        <button
+          className="sidebar-close"
+          onClick={closeSidebar}
+          aria-label="Close sidebar"
+        >
+          ✕
+        </button>
+      </div>
 
-        <nav className="sidebar-navigation">
-          {menuItems.map((item) => (
+      {/* Navigation */}
+      <div className="sidebar-content">
+        <p className="sidebar-section-title">
+          Workspace
+        </p>
+
+        <nav className="sidebar-nav">
+          {navigationItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              onClick={closeSidebar}
               className={({ isActive }) =>
-                isActive
-                  ? "nav-link active"
-                  : "nav-link"
+                `sidebar-link ${isActive ? "active" : ""}`
               }
+              onClick={closeSidebar}
             >
-              <span className="nav-icon">
+              <span className="sidebar-link-icon">
                 {item.icon}
               </span>
 
-              <span>{item.name}</span>
+              <span className="sidebar-link-label">
+                {item.label}
+              </span>
             </NavLink>
           ))}
         </nav>
+      </div>
 
-        {/* Bottom Section */}
-
-        <div className="sidebar-bottom">
-          <div className="upgrade-card">
-            <span>✦</span>
-
-            <h3>Build smarter</h3>
-
-            <p>
-              Organize your development workflow.
-            </p>
+      {/* Sidebar Bottom Section */}
+      <div className="sidebar-bottom">
+        <div className="sidebar-promo">
+          <div className="sidebar-promo-icon">
+            ✦
           </div>
 
-          <p className="sidebar-footer">
-            DevFlow X v1.0
+          <h3>Build smarter</h3>
+
+          <p>
+            Organize your development workflow.
           </p>
         </div>
-      </aside>
-    </>
+
+        <div className="sidebar-footer">
+          <span className="footer-icon">✦</span>
+
+          <div>
+            <strong>DevFlow X</strong>
+            <small>v1.0</small>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 }
 
