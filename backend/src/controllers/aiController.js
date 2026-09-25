@@ -1,61 +1,141 @@
+
 const axios = require("axios");
 
+// FastAPI service URL
 const AI_SERVICE_URL =
-  process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
+  process.env.AI_SERVICE_URL;
 
+// Ask AI controller
 async function askAI(req, res) {
   try {
-    const { question } = req.body;
+    const {
+      message,
+      history = [],
+    } = req.body;
 
-    if (!question || !question.trim()) {
+    // Validate message
+    if (
+      !message ||
+      typeof message !== "string" ||
+      !message.trim()
+    ) {
       return res.status(400).json({
-        message: "Question is required"
+        success: false,
+        message: "Message is required",
       });
     }
 
+    // Check FastAPI URL
+    if (!AI_SERVICE_URL) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "AI_SERVICE_URL is missing in environment variables",
+      });
+    }
+
+    // Send request to FastAPI
     const response = await axios.post(
-      `${AI_SERVICE_URL}/api/ai/ask`,
+      `${AI_SERVICE_URL}/api/ai/chat`,
       {
-        question: question.trim()
+        message: message.trim(),
+        history: Array.isArray(history)
+          ? history
+          : [],
       },
       {
-        timeout: 30000
+        timeout: 60000,
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
-    return res.status(200).json(response.data);
+    // Return FastAPI response to React
+    return res.status(200).json({
+      success: true,
+      reply: response.data.reply,
+      model: response.data.model,
+    });
   } catch (error) {
     console.error(
-      "FastAPI connection error:",
-      error.response?.data || error.message
+      "FastAPI AI connection error:",
+      error.response?.data ||
+        error.message
     );
 
+    // Handle timeout
+    if (error.code === "ECONNABORTED") {
+      return res.status(504).json({
+        success: false,
+        message:
+          "AI service request timed out",
+      });
+    }
+
+    // Handle FastAPI error
+    if (error.response) {
+      return res.status(502).json({
+        success: false,
+        message:
+          "FastAPI returned an error",
+        error: error.response.data,
+      });
+    }
+
+    // Handle connection error
     return res.status(502).json({
-      message: "Unable to connect to FastAPI AI service",
-      error: error.response?.data || error.message
+      success: false,
+      message:
+        "Unable to connect to FastAPI AI service",
+      error: error.message,
     });
   }
 }
 
+// AI health controller
 async function aiHealth(req, res) {
   try {
+    // Check FastAPI URL
+    if (!AI_SERVICE_URL) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "AI_SERVICE_URL is missing in environment variables",
+      });
+    }
+
+    // Request FastAPI health status
     const response = await axios.get(
       `${AI_SERVICE_URL}/api/ai/health`,
       {
-        timeout: 10000
+        timeout: 15000,
       }
     );
 
-    return res.status(200).json(response.data);
+    return res.status(200).json({
+      success: true,
+      ...response.data,
+    });
   } catch (error) {
+    console.error(
+      "FastAPI health error:",
+      error.response?.data ||
+        error.message
+    );
+
     return res.status(502).json({
-      message: "FastAPI AI service is unavailable",
-      error: error.message
+      success: false,
+      message:
+        "FastAPI AI service is unavailable",
+      error:
+        error.response?.data ||
+        error.message,
     });
   }
 }
 
 module.exports = {
   askAI,
-  aiHealth
+  aiHealth,
 };
