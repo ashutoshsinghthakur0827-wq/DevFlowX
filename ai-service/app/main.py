@@ -1,5 +1,6 @@
 
 import os
+import traceback
 from typing import List, Literal
 
 from dotenv import load_dotenv
@@ -9,36 +10,43 @@ from pydantic import BaseModel, Field
 from groq import Groq
 
 
-# Load environment variables from .env
+# ============================================================
+# 1. LOAD ENVIRONMENT VARIABLES
+# ============================================================
+
 load_dotenv()
 
-
-# Read Groq API key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+# Groq client
+client = None
 
-# Create Groq client only when the API key exists
-client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+if GROQ_API_KEY:
+    client = Groq(api_key=GROQ_API_KEY)
 
 
-# Create FastAPI application
+# ============================================================
+# 2. FASTAPI APPLICATION
+# ============================================================
+
 app = FastAPI(
     title="DevFlow X AI Service",
-    description="AI assistant backend for the DevFlow X project",
+    description="AI assistant backend for DevFlow X",
     version="1.0.0",
 )
 
 
-# Allow requests from the frontend
+# ============================================================
+# 3. CORS CONFIGURATION
+# ============================================================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://127.0.0.1:3000",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -46,143 +54,217 @@ app.add_middleware(
 )
 
 
-# Allowed chat roles
+# ============================================================
+# 4. PYDANTIC MODELS
+# ============================================================
+
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(
         ...,
         min_length=1,
-        max_length=8000
+        max_length=8000,
     )
 
 
-# Request model
 class ChatRequest(BaseModel):
     message: str = Field(
         ...,
         min_length=1,
-        max_length=4000
+        max_length=4000,
     )
+
     history: List[ChatMessage] = Field(
         default_factory=list
     )
 
 
-# Response model
 class ChatResponse(BaseModel):
     reply: str
     model: str
 
 
-# Health check endpoint
+# ============================================================
+# 5. SYSTEM PROMPT
+# ============================================================
+
+SYSTEM_PROMPT = """
+You are DevFlow X AI Assistant.
+
+DevFlow X is a software engineering management platform
+built using technologies such as:
+
+- React
+- JavaScript
+- Node.js
+- Express.js
+- MongoDB
+- FastAPI
+- Python
+- Groq API
+- AI agents
+- RAG
+- Software project management
+
+Your responsibilities:
+
+1. Explain programming concepts in simple language.
+2. Help beginners learn MERN stack development.
+3. Explain React, JavaScript, Python, FastAPI, and MongoDB.
+4. Help debug coding errors.
+5. Suggest software project ideas.
+6. Help plan tasks and development roadmaps.
+7. Explain AI, LLMs, RAG, and AI agents.
+8. Provide beginner-friendly code examples.
+9. Explain code step by step when requested.
+10. Give practical placement preparation guidance.
+
+Response guidelines:
+
+- Use simple and clear English.
+- Use headings and bullet points when helpful.
+- Explain difficult concepts with examples.
+- Do not invent test results, credentials, or API responses.
+- Never expose API keys or confidential information.
+- If you do not know something, clearly say so.
+- Give safe and legal technical guidance.
+"""
+
+
+# ============================================================
+# 6. ROOT ROUTE
+# ============================================================
+
 @app.get("/")
 def root():
     return {
+        "success": True,
         "message": "DevFlow X AI Service is running",
-        "status": "online"
+        "status": "online",
     }
 
 
-# AI health endpoint
+# ============================================================
+# 7. HEALTH CHECK ROUTE
+# ============================================================
+
 @app.get("/api/ai/health")
 def ai_health():
-    if not GROQ_API_KEY:
+    if not GROQ_API_KEY or client is None:
         return {
+            "success": False,
             "status": "not_configured",
-            "message": "GROQ_API_KEY is missing"
+            "message": "GROQ_API_KEY is missing",
         }
 
     return {
+        "success": True,
         "status": "healthy",
-        "message": "Groq AI service is configured"
+        "message": "Groq AI service is configured",
     }
 
 
-# Chat endpoint
-@app.post("/api/ai/chat", response_model=ChatResponse)
-def chat_with_ai(request: ChatRequest):
+# ============================================================
+# 8. AI CHAT ROUTE
+# ============================================================
 
-    # Check API key
+@app.post(
+    "/api/ai/chat",
+    response_model=ChatResponse,
+)
+def chat_with_ai(request: ChatRequest):
+    # Check API configuration
     if not GROQ_API_KEY or client is None:
         raise HTTPException(
             status_code=500,
-            detail="Groq API key is not configured. Check your .env file."
+            detail=(
+                "Groq API key is not configured. "
+                "Check the GROQ_API_KEY environment variable."
+            ),
         )
 
-    # Create the system instruction
+    # Prepare system message
     system_message = {
         "role": "system",
-        "content": """
-You are DevFlow X AI Assistant.
-
-DevFlow X is an AI-powered software engineering management platform.
-
-Your responsibilities:
-1. Help users with software development.
-2. Explain React, JavaScript, Node.js, Express, MongoDB and FastAPI.
-3. Help with project management and task planning.
-4. Explain programming errors in beginner-friendly language.
-5. Provide simple examples when useful.
-6. Answer clearly using headings and bullet points.
-7. Do not claim that you executed code if you did not execute it.
-8. If the user asks for code, provide readable and beginner-friendly code.
-9. Keep answers practical and useful for college projects and placement preparation.
-"""
+        "content": SYSTEM_PROMPT,
     }
 
-    # Prepare conversation messages
+    # Prepare messages for Groq
     messages = [system_message]
 
-    # Add previous chat history
+    # Include the last 10 history messages
     for item in request.history[-10:]:
         messages.append(
             {
                 "role": item.role,
-                "content": item.content
+                "content": item.content,
             }
         )
 
-    # Add the latest user message
+    # Add the current user message
     messages.append(
         {
             "role": "user",
-            "content": request.message
+            "content": request.message.strip(),
         }
     )
 
     try:
-        # Call Groq Chat Completions API
+        # Send request to Groq
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=messages,
             temperature=0.4,
-            max_tokens=1200
+            max_tokens=1200,
         )
 
-        # Extract AI response
+        # Read AI response
         reply = completion.choices[0].message.content
 
-        if not reply:
+        # Validate response
+        if not reply or not reply.strip():
             raise HTTPException(
                 status_code=502,
-                detail="The AI returned an empty response."
+                detail="The AI returned an empty response.",
             )
 
+        # Return response to Express
         return ChatResponse(
-            reply=reply,
-            model="openai/gpt-oss-120b"
+            reply=reply.strip(),
+            model="openai/gpt-oss-120b",
         )
 
+    except HTTPException:
+        raise
+
     except Exception as error:
-        import traceback
+        print("\n========== AI ERROR ==========")
+        print("Error type:", type(error).__name__)
+        print("Error message:", str(error))
+        traceback.print_exc()
+        print("========== END AI ERROR ==========\n")
 
-    print("\n========== AI ERROR ==========")
-    print(type(error).__name__)
-    print(str(error))
-    traceback.print_exc()
-    print("========== END AI ERROR ==========\n")
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Unable to get an AI response. "
+                "Check the FastAPI terminal logs."
+            ),
+        )
 
-    raise HTTPException(
-        status_code=500,
-        detail="Unable to get an AI response. Check the backend terminal."
+
+# ============================================================
+# 9. LOCAL DEVELOPMENT ENTRY POINT
+# ============================================================
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.getenv("PORT", "8000"))
+
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=True,
     )
