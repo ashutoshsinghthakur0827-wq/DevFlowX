@@ -36,7 +36,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const CLIENT_URL = process.env.CLIENT_URL;
 
 // ==================================================
-// VALIDATE REQUIRED ENVIRONMENT VARIABLES
+// VALIDATE ENVIRONMENT VARIABLES
 // ==================================================
 
 if (!MONGO_URI) {
@@ -56,39 +56,23 @@ if (!process.env.JWT_SECRET) {
 }
 
 // ==================================================
-// MIDDLEWARE
-// ==================================================
-
-// Parse JSON request body
-app.use(
-  express.json({
-    limit: "10mb",
-  })
-);
-
-// Parse URL-encoded request body
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "10mb",
-  })
-);
-
-// ==================================================
 // CORS CONFIGURATION
 // ==================================================
 
 const allowedOrigins = [
+  // Local development
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  "http://localhost:3000",
 
-  // Vercel frontend
+  // Deployed Vercel frontend
+  "https://dev-flow-7nbl3z6xl-hack-tech.vercel.app",
+
+  // Other frontend URLs
   "https://dev-flow-x.vercel.app",
-
-  // Render frontend
   "https://devflowx-frontend.onrender.com",
 
-  // Environment variable frontend URL
+  // Environment variable
   CLIENT_URL,
 ].filter(Boolean);
 
@@ -97,9 +81,12 @@ const uniqueOrigins = [
   ...new Set(allowedOrigins),
 ];
 
+console.log("Allowed CORS origins:");
+console.log(uniqueOrigins);
+
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests without an Origin header.
+    // Allow requests without Origin headers.
     // Example: Postman and server-to-server requests.
     if (!origin) {
       return callback(null, true);
@@ -112,9 +99,7 @@ const corsOptions = {
     console.log("Blocked CORS origin:", origin);
 
     return callback(
-      new Error(
-        `CORS: Origin ${origin} is not allowed`
-      )
+      new Error("CORS: Origin is not allowed")
     );
   },
 
@@ -137,11 +122,30 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
-// Apply CORS middleware
+// ==================================================
+// MIDDLEWARE
+// ==================================================
+
+// CORS must be registered before API routes.
 app.use(cors(corsOptions));
 
-// Handle browser preflight requests
+// Handle browser preflight requests.
 app.options(/.*/, cors(corsOptions));
+
+// Parse JSON request body.
+app.use(
+  express.json({
+    limit: "10mb",
+  })
+);
+
+// Parse URL-encoded request body.
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "10mb",
+  })
+);
 
 // ==================================================
 // REQUEST LOGGING
@@ -191,12 +195,16 @@ app.get("/api/health", (req, res) => {
 // API ROUTES
 // ==================================================
 
+// Authentication routes
 app.use("/api/auth", authRoutes);
 
+// Project routes
 app.use("/api/projects", projectRoutes);
 
+// Task routes
 app.use("/api/tasks", taskRoutes);
 
+// Team routes
 app.use("/api/teams", teamRoutes);
 
 // AI routes
@@ -230,11 +238,13 @@ app.use((error, req, res, next) => {
   );
 
   // Handle CORS errors
-  if (error.message.startsWith("CORS:")) {
+  if (
+    error.message &&
+    error.message.startsWith("CORS:")
+  ) {
     return res.status(403).json({
       success: false,
-      message:
-        "CORS error: Origin is not allowed",
+      message: "CORS error: Origin is not allowed",
     });
   }
 
@@ -275,6 +285,12 @@ async function startServer() {
       console.log(
         `AI service configured: ${
           Boolean(process.env.AI_SERVICE_URL)
+        }`
+      );
+
+      console.log(
+        `Client URL: ${
+          CLIENT_URL || "Not configured"
         }`
       );
     });
