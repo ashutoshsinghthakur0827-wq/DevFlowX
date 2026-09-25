@@ -1,4 +1,3 @@
-
 import os
 import traceback
 from typing import List, Literal
@@ -18,7 +17,7 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Groq client
+# Initialize Groq client
 client = None
 
 if GROQ_API_KEY:
@@ -58,6 +57,7 @@ app.add_middleware(
 # 4. PYDANTIC MODELS
 # ============================================================
 
+
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(
@@ -69,6 +69,18 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(
+        ...,
+        min_length=1,
+        max_length=4000,
+    )
+
+    history: List[ChatMessage] = Field(
+        default_factory=list
+    )
+
+
+class AskRequest(BaseModel):
+    question: str = Field(
         ...,
         min_length=1,
         max_length=4000,
@@ -132,8 +144,119 @@ Response guidelines:
 
 
 # ============================================================
-# 6. ROOT ROUTE
+# 6. HELPER FUNCTION: CHECK GROQ CONFIGURATION
 # ============================================================
+
+
+def check_groq_configuration():
+    """
+    Check whether the Groq API key and client are configured.
+    """
+
+    if not GROQ_API_KEY or client is None:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Groq API key is not configured. "
+                "Check the GROQ_API_KEY environment variable."
+            ),
+        )
+
+
+# ============================================================
+# 7. HELPER FUNCTION: GENERATE AI RESPONSE
+# ============================================================
+
+
+def generate_ai_response(
+    user_message: str,
+    history: List[ChatMessage],
+):
+    """
+    Send a message and conversation history to Groq.
+    """
+
+    check_groq_configuration()
+
+    # System message
+    system_message = {
+        "role": "system",
+        "content": SYSTEM_PROMPT,
+    }
+
+    # Start messages list
+    messages = [system_message]
+
+    # Add the last 10 history messages
+    for item in history[-10:]:
+        messages.append(
+            {
+                "role": item.role,
+                "content": item.content,
+            }
+        )
+
+    # Add the current user message
+    messages.append(
+        {
+            "role": "user",
+            "content": user_message.strip(),
+        }
+    )
+
+    try:
+        # Send request to Groq
+        completion = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=messages,
+            temperature=0.4,
+            max_tokens=1200,
+        )
+
+        # Read the response
+        if not completion.choices:
+            raise HTTPException(
+                status_code=502,
+                detail="The AI returned no choices.",
+            )
+
+        reply = completion.choices[0].message.content
+
+        # Validate response
+        if not reply or not reply.strip():
+            raise HTTPException(
+                status_code=502,
+                detail="The AI returned an empty response.",
+            )
+
+        return ChatResponse(
+            reply=reply.strip(),
+            model="openai/gpt-oss-120b",
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+        print("\n========== GROQ AI ERROR ==========")
+        print("Error type:", type(error).__name__)
+        print("Error message:", str(error))
+        traceback.print_exc()
+        print("========== END GROQ AI ERROR ==========\n")
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Unable to get an AI response. "
+                "Check the FastAPI Render logs."
+            ),
+        )
+
+
+# ============================================================
+# 8. ROOT ROUTE
+# ============================================================
+
 
 @app.get("/")
 def root():
@@ -145,8 +268,9 @@ def root():
 
 
 # ============================================================
-# 7. HEALTH CHECK ROUTE
+# 9. HEALTH CHECK ROUTE
 # ============================================================
+
 
 @app.get("/api/ai/health")
 def ai_health():
@@ -165,97 +289,61 @@ def ai_health():
 
 
 # ============================================================
-# 8. AI CHAT ROUTE
+# 10. CHAT ROUTE
 # ============================================================
+
 
 @app.post(
     "/api/ai/chat",
     response_model=ChatResponse,
 )
 def chat_with_ai(request: ChatRequest):
-    # Check API configuration
-    if not GROQ_API_KEY or client is None:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Groq API key is not configured. "
-                "Check the GROQ_API_KEY environment variable."
-            ),
-        )
+    """
+    Chat endpoint using the 'message' field.
 
-    # Prepare system message
-    system_message = {
-        "role": "system",
-        "content": SYSTEM_PROMPT,
+    Request example:
+    {
+        "message": "Explain React",
+        "history": []
     }
+    """
 
-    # Prepare messages for Groq
-    messages = [system_message]
-
-    # Include the last 10 history messages
-    for item in request.history[-10:]:
-        messages.append(
-            {
-                "role": item.role,
-                "content": item.content,
-            }
-        )
-
-    # Add the current user message
-    messages.append(
-        {
-            "role": "user",
-            "content": request.message.strip(),
-        }
+    return generate_ai_response(
+        user_message=request.message,
+        history=request.history,
     )
 
-    try:
-        # Send request to Groq
-        completion = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
-            messages=messages,
-            temperature=0.4,
-            max_tokens=1200,
-        )
 
-        # Read AI response
-        reply = completion.choices[0].message.content
+# ============================================================
+# 11. ASK ROUTE FOR EXPRESS BACKEND
+# ============================================================
 
-        # Validate response
-        if not reply or not reply.strip():
-            raise HTTPException(
-                status_code=502,
-                detail="The AI returned an empty response.",
-            )
 
-        # Return response to Express
-        return ChatResponse(
-            reply=reply.strip(),
-            model="openai/gpt-oss-120b",
-        )
+@app.post(
+    "/api/ai/ask",
+    response_model=ChatResponse,
+)
+def ask_ai(request: AskRequest):
+    """
+    Ask endpoint using the 'question' field.
 
-    except HTTPException:
-        raise
+    Request example:
+    {
+        "question": "Explain React",
+        "history": []
+    }
+    """
 
-    except Exception as error:
-        print("\n========== AI ERROR ==========")
-        print("Error type:", type(error).__name__)
-        print("Error message:", str(error))
-        traceback.print_exc()
-        print("========== END AI ERROR ==========\n")
-
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Unable to get an AI response. "
-                "Check the FastAPI terminal logs."
-            ),
-        )
+    return generate_ai_response(
+        user_message=request.question,
+        history=request.history,
+    )
 
 
 # ============================================================
-# 9. LOCAL DEVELOPMENT ENTRY POINT
+# 12. LOCAL DEVELOPMENT ENTRY POINT
 # ============================================================
+
 
 if __name__ == "__main__":
     import uvicorn
