@@ -1,3 +1,4 @@
+
 import os
 import traceback
 from typing import List, Literal
@@ -17,7 +18,16 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Initialize Groq client
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "http://localhost:5173"
+)
+
+
+# ============================================================
+# 2. INITIALIZE GROQ CLIENT
+# ============================================================
+
 client = None
 
 if GROQ_API_KEY:
@@ -25,7 +35,7 @@ if GROQ_API_KEY:
 
 
 # ============================================================
-# 2. FASTAPI APPLICATION
+# 3. FASTAPI APPLICATION
 # ============================================================
 
 app = FastAPI(
@@ -36,7 +46,7 @@ app = FastAPI(
 
 
 # ============================================================
-# 3. CORS CONFIGURATION
+# 4. CORS CONFIGURATION
 # ============================================================
 
 app.add_middleware(
@@ -46,6 +56,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        FRONTEND_URL,
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -54,12 +65,13 @@ app.add_middleware(
 
 
 # ============================================================
-# 4. PYDANTIC MODELS
+# 5. PYDANTIC MODELS
 # ============================================================
 
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
+
     content: str = Field(
         ...,
         min_length=1,
@@ -97,14 +109,14 @@ class ChatResponse(BaseModel):
 
 
 # ============================================================
-# 5. SYSTEM PROMPT
+# 6. SYSTEM PROMPT
 # ============================================================
 
 SYSTEM_PROMPT = """
 You are DevFlow X AI Assistant.
 
 DevFlow X is a software engineering management platform
-built using technologies such as:
+built using:
 
 - React
 - JavaScript
@@ -125,7 +137,7 @@ Your responsibilities:
 3. Explain React, JavaScript, Python, FastAPI, and MongoDB.
 4. Help debug coding errors.
 5. Suggest software project ideas.
-6. Help plan tasks and development roadmaps.
+6. Help plan development tasks and roadmaps.
 7. Explain AI, LLMs, RAG, and AI agents.
 8. Provide beginner-friendly code examples.
 9. Explain code step by step when requested.
@@ -136,6 +148,7 @@ Response guidelines:
 - Use simple and clear English.
 - Use headings and bullet points when helpful.
 - Explain difficult concepts with examples.
+- Provide beginner-friendly explanations.
 - Do not invent test results, credentials, or API responses.
 - Never expose API keys or confidential information.
 - If you do not know something, clearly say so.
@@ -144,7 +157,7 @@ Response guidelines:
 
 
 # ============================================================
-# 6. HELPER FUNCTION: CHECK GROQ CONFIGURATION
+# 7. CHECK GROQ CONFIGURATION
 # ============================================================
 
 
@@ -164,7 +177,7 @@ def check_groq_configuration():
 
 
 # ============================================================
-# 7. HELPER FUNCTION: GENERATE AI RESPONSE
+# 8. GENERATE AI RESPONSE
 # ============================================================
 
 
@@ -173,18 +186,16 @@ def generate_ai_response(
     history: List[ChatMessage],
 ):
     """
-    Send a message and conversation history to Groq.
+    Send the user message and conversation history to Groq.
     """
 
     check_groq_configuration()
 
-    # System message
     system_message = {
         "role": "system",
         "content": SYSTEM_PROMPT,
     }
 
-    # Start messages list
     messages = [system_message]
 
     # Add the last 10 history messages
@@ -205,7 +216,6 @@ def generate_ai_response(
     )
 
     try:
-        # Send request to Groq
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=messages,
@@ -213,7 +223,6 @@ def generate_ai_response(
             max_tokens=1200,
         )
 
-        # Read the response
         if not completion.choices:
             raise HTTPException(
                 status_code=502,
@@ -222,7 +231,6 @@ def generate_ai_response(
 
         reply = completion.choices[0].message.content
 
-        # Validate response
         if not reply or not reply.strip():
             raise HTTPException(
                 status_code=502,
@@ -245,16 +253,15 @@ def generate_ai_response(
         print("========== END GROQ AI ERROR ==========\n")
 
         raise HTTPException(
-            status_code=500,
+            status_code=502,
             detail=(
-                "Unable to get an AI response. "
-                "Check the FastAPI Render logs."
+                "Unable to get a response from the Groq AI service."
             ),
         )
 
 
 # ============================================================
-# 8. ROOT ROUTE
+# 9. ROOT ROUTE
 # ============================================================
 
 
@@ -268,7 +275,7 @@ def root():
 
 
 # ============================================================
-# 9. HEALTH CHECK ROUTE
+# 10. HEALTH CHECK ROUTE
 # ============================================================
 
 
@@ -289,7 +296,7 @@ def ai_health():
 
 
 # ============================================================
-# 10. CHAT ROUTE
+# 11. CHAT ROUTE
 # ============================================================
 
 
@@ -299,9 +306,10 @@ def ai_health():
 )
 def chat_with_ai(request: ChatRequest):
     """
-    Chat endpoint using the 'message' field.
+    Chat endpoint.
 
-    Request example:
+    Request body:
+
     {
         "message": "Explain React",
         "history": []
@@ -315,7 +323,7 @@ def chat_with_ai(request: ChatRequest):
 
 
 # ============================================================
-# 11. ASK ROUTE FOR EXPRESS BACKEND
+# 12. ASK ROUTE FOR NODE.JS EXPRESS BACKEND
 # ============================================================
 
 
@@ -325,9 +333,10 @@ def chat_with_ai(request: ChatRequest):
 )
 def ask_ai(request: AskRequest):
     """
-    Ask endpoint using the 'question' field.
+    Ask endpoint for the Node.js backend.
 
-    Request example:
+    Request body:
+
     {
         "question": "Explain React",
         "history": []
@@ -341,7 +350,7 @@ def ask_ai(request: AskRequest):
 
 
 # ============================================================
-# 12. LOCAL DEVELOPMENT ENTRY POINT
+# 13. LOCAL DEVELOPMENT ENTRY POINT
 # ============================================================
 
 
