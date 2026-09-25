@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import { useApp } from "./context/AppContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 // Render URL
 import RENDER_URL from "./config";
 
