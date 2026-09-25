@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:5000/api/teams";
+import API_URL from "../config/api";
+
+const TEAM_API_URL = `${API_URL}/teams`;
 
 // Get token
 const getToken = () => {
@@ -9,7 +11,7 @@ const getToken = () => {
 export const getTeams = async () => {
   const token = getToken();
 
-  const response = await fetch(API_URL, {
+  const response = await fetch(TEAM_API_URL, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -30,7 +32,7 @@ export const getTeams = async () => {
 export const deleteTeam = async (teamId) => {
   const token = getToken();
 
-  const response = await fetch(`${API_URL}/${teamId}`, {
+  const response = await fetch(`${TEAM_API_URL}/${teamId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
