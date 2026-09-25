@@ -1,11 +1,8 @@
-
 import { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import { useApp } from "./context/AppContext";
-
-// API URL
-const API_URL = import.meta.env.VITE_API_URL;
+import API_URL from "./config/api";
 
 // Layout Components
 import Sidebar from "./components/Sidebar";
@@ -32,11 +29,9 @@ function App() {
     setBackendStatus("");
 
     try {
-      if (!API_URL) {
-        throw new Error("VITE_API_URL is missing");
-      }
+      const healthURL = `${API_URL}/health`;
 
-      const healthURL = `${API_URL.replace(/\/$/, "")}/health`;
+      console.log("Checking backend:", healthURL);
 
       const response = await fetch(healthURL);
 
@@ -51,7 +46,7 @@ function App() {
       console.log("Backend connected:", data);
 
       setBackendStatus(
-        `Connected: ${data.message}`
+        `Connected: ${data.message || "Backend is working"}`
       );
     } catch (error) {
       console.error("Backend connection failed:", error);
@@ -78,7 +73,6 @@ function App() {
         <Topbar />
 
         <main className="page-content">
-          {/* Backend Connection Test */}
           <div className="backend-test-container">
             <h3>Backend Connection</h3>
 
@@ -97,7 +91,6 @@ function App() {
           </div>
 
           <Routes>
-            {/* Dashboard */}
             <Route
               path="/"
               element={
@@ -113,49 +106,41 @@ function App() {
               element={<Dashboard />}
             />
 
-            {/* Project Management */}
             <Route
               path="/projects"
               element={<Projects />}
             />
 
-            {/* Task Management */}
             <Route
               path="/tasks"
               element={<Tasks />}
             />
 
-            {/* Team Collaboration */}
             <Route
               path="/team"
               element={<Team />}
             />
 
-            {/* Analytics and GitHub */}
             <Route
               path="/analytics"
               element={<Analytics />}
             />
 
-            {/* AI Assistant */}
             <Route
               path="/ai-assistant"
               element={<AIAssistant />}
             />
 
-            {/* RAG Assistant */}
             <Route
               path="/rag-assistant"
               element={<RAGAssistant />}
             />
 
-            {/* Application Settings */}
             <Route
               path="/settings"
               element={<Settings />}
             />
 
-            {/* Unknown Route */}
             <Route
               path="*"
               element={
