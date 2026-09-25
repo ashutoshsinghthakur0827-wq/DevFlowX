@@ -1,157 +1,58 @@
 
 import { useState } from "react";
 import {
+  BrowserRouter,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 
-import { useApp } from "./context/AppContext";
-import API_URL from "./config/api";
+import { AppProvider } from "./context/AppContext.jsx";
 
-// Layout Components
-import Sidebar from "./components/Sidebar";
-import Topbar from "./components/Topbar";
+import Sidebar from "./components/Sidebar.jsx";
+import Topbar from "./components/Topbar.jsx";
 
-// Pages
-import Dashboard from "./pages/Dashboard";
-import Projects from "./pages/Projects";
-import Tasks from "./pages/Tasks";
-import Team from "./pages/Team";
-import Analytics from "./pages/Analytics";
-import AIAssistant from "./pages/AIAssistant";
-import RAGAssistant from "./pages/RAGAssistant";
-import Settings from "./pages/Settings";
+import Dashboard from "./pages/Dashboard.jsx";
+import Projects from "./pages/Projects.jsx";
+import Tasks from "./pages/Tasks.jsx";
+import Team from "./pages/Team.jsx";
+import Analytics from "./pages/Analytics.jsx";
+import AIAssistant from "./pages/AIAssistant.jsx";
+import Settings from "./pages/Settings.jsx";
 
-function App() {
-  const { darkMode } = useApp();
+function AppLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Mobile sidebar state
-  const [isSidebarOpen, setIsSidebarOpen] =
-    useState(false);
-
-  // Backend state
-  const [backendStatus, setBackendStatus] =
-    useState("");
-
-  const [checkingBackend, setCheckingBackend] =
-    useState(false);
-
-  // Close sidebar
-  function closeSidebar() {
-    setIsSidebarOpen(false);
+  function openSidebar() {
+    setSidebarOpen(true);
   }
 
-  // Check backend
-  async function checkBackend() {
-    setCheckingBackend(true);
-    setBackendStatus("");
-
-    try {
-      const healthURL = `${API_URL}/health`;
-
-      console.log("Checking backend:", healthURL);
-
-      const response = await fetch(healthURL);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            data.detail ||
-            data.error ||
-            `Backend returned status ${response.status}`
-        );
-      }
-
-      setBackendStatus(
-        `Connected: ${
-          data.message || "Backend is working"
-        }`
-      );
-    } catch (error) {
-      console.error(
-        "Backend connection failed:",
-        error
-      );
-
-      setBackendStatus(
-        `Connection failed: ${error.message}`
-      );
-    } finally {
-      setCheckingBackend(false);
-    }
+  function closeSidebar() {
+    setSidebarOpen(false);
   }
 
   return (
-    <div
-      className={
-        darkMode
-          ? "app dark-theme"
-          : "app light-theme"
-      }
-    >
-      {/* Mobile Menu Button */}
-
-      <button
-        type="button"
-        className="mobile-menu-button"
-        onClick={() => setIsSidebarOpen(true)}
-        aria-label="Open navigation menu"
-      >
-        ☰
-      </button>
+    <div className="app-layout">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay active"
+          onClick={closeSidebar}
+        />
+      )}
 
       {/* Sidebar */}
-
       <Sidebar
-        isOpen={isSidebarOpen}
+        sidebarOpen={sidebarOpen}
         closeSidebar={closeSidebar}
       />
 
-      {/* Main Area */}
+      {/* Main section */}
+      <div className="main-layout">
+        <Topbar openSidebar={openSidebar} />
 
-      <div className="main-area">
-        <Topbar />
-
-        <main className="page-content">
-          {/* Backend Test */}
-
-          <div className="backend-test-container">
-            <h3>Backend Connection</h3>
-
-            <button
-              type="button"
-              onClick={checkBackend}
-              disabled={checkingBackend}
-            >
-              {checkingBackend
-                ? "Checking..."
-                : "Check Backend"}
-            </button>
-
-            {backendStatus && (
-              <p>{backendStatus}</p>
-            )}
-          </div>
-
-          {/* Routes */}
-
+        <main className="main-content">
           <Routes>
-            <Route
-              path="/"
-              element={
-                <Navigate
-                  to="/dashboard"
-                  replace
-                />
-              }
-            />
-
-            <Route
-              path="/dashboard"
-              element={<Dashboard />}
-            />
+            <Route path="/" element={<Dashboard />} />
 
             <Route
               path="/projects"
@@ -179,28 +80,23 @@ function App() {
             />
 
             <Route
-              path="/rag-assistant"
-              element={<RAGAssistant />}
-            />
-
-            <Route
               path="/settings"
               element={<Settings />}
-            />
-
-            <Route
-              path="*"
-              element={
-                <Navigate
-                  to="/dashboard"
-                  replace
-                />
-              }
             />
           </Routes>
         </main>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AppProvider>
+      <BrowserRouter>
+        <AppLayout />
+      </BrowserRouter>
+    </AppProvider>
   );
 }
 
