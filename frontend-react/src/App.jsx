@@ -1,10 +1,11 @@
-
 import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
+// Components
 import Sidebar from "./components/Sidebar.jsx";
 import Topbar from "./components/Topbar.jsx";
 
+// Pages
 import Dashboard from "./pages/Dashboard.jsx";
 import Projects from "./pages/Projects.jsx";
 import Tasks from "./pages/Tasks.jsx";
@@ -13,13 +14,15 @@ import Analytics from "./pages/Analytics.jsx";
 import AIAssistant from "./pages/AIAssistant.jsx";
 import Settings from "./pages/Settings.jsx";
 
-function AppLayout() {
+function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Open sidebar on mobile
   function openSidebar() {
     setSidebarOpen(true);
   }
 
+  // Close sidebar
   function closeSidebar() {
     setSidebarOpen(false);
   }
@@ -31,8 +34,7 @@ function AppLayout() {
         <div
           className="sidebar-overlay active"
           onClick={closeSidebar}
-          aria-label="Close sidebar"
-        />
+        ></div>
       )}
 
       {/* Sidebar */}
@@ -41,48 +43,66 @@ function AppLayout() {
         closeSidebar={closeSidebar}
       />
 
-      {/* Main Application Layout */}
+      {/* Main Layout */}
       <div className="main-layout">
+        {/* Topbar */}
         <Topbar openSidebar={openSidebar} />
 
+        {/* Main Content */}
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            {/* Default Route */}
+            <Route
+              path="/"
+              element={<Navigate to="/dashboard" replace />}
+            />
 
+            {/* Dashboard */}
+            <Route
+              path="/dashboard"
+              element={<Dashboard />}
+            />
+
+            {/* Projects */}
             <Route
               path="/projects"
               element={<Projects />}
             />
 
+            {/* Tasks */}
             <Route
               path="/tasks"
               element={<Tasks />}
             />
 
+            {/* Team */}
             <Route
               path="/team"
               element={<Team />}
             />
 
+            {/* Analytics */}
             <Route
               path="/analytics"
               element={<Analytics />}
             />
 
+            {/* AI Assistant */}
             <Route
               path="/ai-assistant"
               element={<AIAssistant />}
             />
 
+            {/* Settings */}
             <Route
               path="/settings"
               element={<Settings />}
             />
 
-            {/* Fallback Route */}
+            {/* Unknown Route */}
             <Route
               path="*"
-              element={<Dashboard />}
+              element={<Navigate to="/dashboard" replace />}
             />
           </Routes>
         </main>
@@ -91,4 +111,4 @@ function AppLayout() {
   );
 }
 
-export default AppLayout;
+export default App;
