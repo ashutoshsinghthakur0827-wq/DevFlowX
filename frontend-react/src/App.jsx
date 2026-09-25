@@ -1,5 +1,5 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 
 import { useApp } from "./context/AppContext";
 
@@ -25,6 +25,32 @@ import Settings from "./pages/Settings";
 function App() {
   const { darkMode } = useApp();
 
+  useEffect(() => {
+    async function checkBackend() {
+      try {
+        if (!API_URL) {
+          throw new Error("VITE_API_URL is missing");
+        }
+
+        const response = await fetch(`${API_URL}/health`);
+
+        if (!response.ok) {
+          throw new Error(
+            `Backend returned status ${response.status}`
+          );
+        }
+
+        const data = await response.json();
+
+        console.log("Backend connected:", data);
+      } catch (error) {
+        console.error("Backend connection failed:", error);
+      }
+    }
+
+    checkBackend();
+  }, []);
+
   return (
     <div className={darkMode ? "app dark-theme" : "app light-theme"}>
       <Sidebar />
@@ -33,77 +59,7 @@ function App() {
         <Topbar />
 
         <main className="page-content">
-          {/* Render Website Link */}
-          <div className="render-link-container">
-            <a
-              href={RENDER_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open Render Website
-            </a>
-          </div>
-
-          <Routes>
-            {/* Dashboard */}
-            <Route
-              path="/"
-              element={<Navigate to="/dashboard" replace />}
-            />
-
-            <Route
-              path="/dashboard"
-              element={<Dashboard />}
-            />
-
-            {/* Project Management */}
-            <Route
-              path="/projects"
-              element={<Projects />}
-            />
-
-            {/* Task Management */}
-            <Route
-              path="/tasks"
-              element={<Tasks />}
-            />
-
-            {/* Team Collaboration */}
-            <Route
-              path="/team"
-              element={<Team />}
-            />
-
-            {/* Analytics and GitHub */}
-            <Route
-              path="/analytics"
-              element={<Analytics />}
-            />
-
-            {/* AI Assistant */}
-            <Route
-              path="/ai-assistant"
-              element={<AIAssistant />}
-            />
-
-            {/* RAG Assistant */}
-            <Route
-              path="/rag-assistant"
-              element={<RAGAssistant />}
-            />
-
-            {/* Application Settings */}
-            <Route
-              path="/settings"
-              element={<Settings />}
-            />
-
-            {/* Unknown Route */}
-            <Route
-              path="*"
-              element={<Navigate to="/dashboard" replace />}
-            />
-          </Routes>
+          {/* Your existing Routes code stays here */}
         </main>
       </div>
     </div>
