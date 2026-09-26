@@ -1,19 +1,13 @@
-
 import { useRef, useState } from "react";
 
 // ==================================================
 // API CONFIGURATION
 // ==================================================
 
-// Your Express backend API URL
-// .env:
-// VITE_API_URL=https://devflowx-zmlo.onrender.com/api
-
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://devflowx-zmlo.onrender.com/api";
 
-// Remove trailing slash
 const BASE_URL = API_URL.replace(/\/$/, "");
 
 // ==================================================
@@ -23,38 +17,29 @@ const BASE_URL = API_URL.replace(/\/$/, "");
 const initialMessage = {
   role: "assistant",
   content:
-    "Hello! I am your DevFlow X AI Assistant. " +
-    "Ask me about React, FastAPI, MERN, programming, " +
-    "or your software projects.",
+    "Hello! I am your DevFlow X AI Assistant. Ask me about React, FastAPI, MERN, programming, or your software projects.",
 };
 
 // ==================================================
-// AI ASSISTANT COMPONENT
+// AI ASSISTANT
 // ==================================================
 
 function AIAssistant() {
-  // Chat messages displayed in the interface
   const [messages, setMessages] = useState([
     initialMessage,
   ]);
 
-  // Current question
   const [question, setQuestion] = useState("");
 
-  // Conversation history sent to backend
   const [chatHistory, setChatHistory] = useState([]);
 
-  // Loading state
   const [loading, setLoading] = useState(false);
 
-  // AI health status
   const [healthStatus, setHealthStatus] =
     useState("Not checked");
 
-  // Error message
   const [error, setError] = useState("");
 
-  // Textarea reference
   const textareaRef = useRef(null);
 
   // ==================================================
@@ -80,25 +65,37 @@ function AIAssistant() {
     setError("");
 
     try {
-      // Express AI health route
-      // /api/ai/health
-      const healthURL = `${BASE_URL}/ai/health`;
+      const healthURL =
+        `${BASE_URL}/ai/health`;
 
       console.log(
         "Checking AI health:",
         healthURL
       );
 
-      const response = await fetch(healthURL);
+      const response = await fetch(
+        healthURL,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
+
+      console.log(
+        "AI health response:",
+        data
+      );
 
       if (!response.ok) {
         throw new Error(
           data.message ||
-            data.detail ||
-            data.error ||
-            `Health check failed: ${response.status}`
+          data.detail ||
+          data.error ||
+          `Health check failed: ${response.status}`
         );
       }
 
@@ -106,25 +103,29 @@ function AIAssistant() {
         data.status === "healthy" ||
         data.status === "online"
       ) {
-        setHealthStatus("AI service is healthy");
+        setHealthStatus(
+          "AI service is healthy"
+        );
       } else {
         setHealthStatus(
           data.message ||
-            data.status ||
-            "AI service is connected"
+          data.status ||
+          "AI service is connected"
         );
       }
+
     } catch (healthError) {
       console.error(
         "AI health error:",
         healthError
       );
 
-      setHealthStatus("Backend is offline");
+      setHealthStatus(
+        "Backend is offline"
+      );
 
       setError(
-        "Unable to connect to the AI backend. " +
-          "Check your Express and FastAPI services."
+        "Unable to connect to the AI backend."
       );
     }
   }
@@ -134,23 +135,27 @@ function AIAssistant() {
   // ==================================================
 
   async function askAI() {
-    const trimmedQuestion = question.trim();
+    const trimmedQuestion =
+      question.trim();
 
-    // Validate question
     if (!trimmedQuestion) {
-      setError("Please enter a question first.");
+      setError(
+        "Please enter a question first."
+      );
       return;
     }
 
-    // Prevent multiple requests
     if (loading) {
       return;
     }
 
     setError("");
 
-    // Display user question
-    addMessage("user", trimmedQuestion);
+    // Show user's message
+    addMessage(
+      "user",
+      trimmedQuestion
+    );
 
     // Clear input
     setQuestion("");
@@ -159,40 +164,82 @@ function AIAssistant() {
     setLoading(true);
 
     try {
-      // Express AI request route
-      // /api/ai/ask
-      const aiURL = `${BASE_URL}/ai/ask`;
+      const aiURL =
+        `${BASE_URL}/ai/ask`;
 
       console.log(
-        "Sending AI request:",
+        "AI URL:",
         aiURL
       );
 
-      const response = await fetch(aiURL, {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
+      console.log(
+        "AI Request:",
+        {
           message: trimmedQuestion,
           history: chatHistory,
-        }),
-      });
+        }
+      );
 
-      const data = await response.json();
+      const response = await fetch(
+        aiURL,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Accept:
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            message:
+              trimmedQuestion,
+
+            history:
+              chatHistory,
+          }),
+        }
+      );
+
+      const responseText =
+        await response.text();
+
+      console.log(
+        "AI Status:",
+        response.status
+      );
+
+      console.log(
+        "AI Raw Response:",
+        responseText
+      );
+
+      let data;
+
+      try {
+        data =
+          JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          `Invalid server response. Status: ${response.status}`
+        );
+      }
 
       if (!response.ok) {
         throw new Error(
           data.message ||
-            data.detail ||
-            data.error ||
-            `AI request failed: ${response.status}`
+          data.detail ||
+          data.error ||
+          `AI request failed: ${response.status}`
         );
       }
 
-      // Read AI response
+      // ==================================================
+      // GET AI REPLY
+      // ==================================================
+
       const aiReply =
         data.reply ||
         data.response ||
@@ -200,28 +247,37 @@ function AIAssistant() {
         data.message ||
         "The AI returned an empty response.";
 
-      // Display AI response
-      addMessage("assistant", aiReply);
+      // Show AI response
+      addMessage(
+        "assistant",
+        aiReply
+      );
 
-      // Update conversation history
+      // ==================================================
+      // UPDATE CHAT HISTORY
+      // ==================================================
+
       const updatedHistory = [
         ...chatHistory,
 
         {
           role: "user",
-          content: trimmedQuestion,
+          content:
+            trimmedQuestion,
         },
 
         {
           role: "assistant",
-          content: aiReply,
+          content:
+            aiReply,
         },
       ];
 
-      // Keep the last 20 messages
+      // Keep latest 20 messages
       setChatHistory(
         updatedHistory.slice(-20)
       );
+
     } catch (chatError) {
       console.error(
         "AI chat error:",
@@ -232,14 +288,16 @@ function AIAssistant() {
         chatError.message ||
         "Unable to connect to the AI service.";
 
-      setError(errorMessage);
+      setError(
+        errorMessage
+      );
 
       addMessage(
         "assistant",
         "Sorry, I could not process your request."
       );
+
     } finally {
-      // Stop loading
       setLoading(false);
     }
   }
@@ -249,8 +307,6 @@ function AIAssistant() {
   // ==================================================
 
   function handleKeyDown(event) {
-    // Enter sends the question
-    // Shift + Enter creates a new line
     if (
       event.key === "Enter" &&
       !event.shiftKey
@@ -262,14 +318,18 @@ function AIAssistant() {
   }
 
   // ==================================================
-  // USE SUGGESTION
+  // SUGGESTION
   // ==================================================
 
-  function useSuggestion(suggestion) {
-    setQuestion(suggestion);
+  function useSuggestion(
+    suggestion
+  ) {
+    setQuestion(
+      suggestion
+    );
+
     setError("");
 
-    // Focus textarea
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 0);
@@ -280,36 +340,55 @@ function AIAssistant() {
   // ==================================================
 
   function clearChat() {
-    setMessages([initialMessage]);
+    setMessages([
+      initialMessage,
+    ]);
+
     setChatHistory([]);
+
     setQuestion("");
+
     setError("");
-    setHealthStatus("Not checked");
+
+    setHealthStatus(
+      "Not checked"
+    );
   }
 
   // ==================================================
-  // JSX UI
+  // JSX
   // ==================================================
 
   return (
     <div className="ai-assistant-page">
-      {/* Page heading */}
+
+      {/* PAGE HEADING */}
+
       <div className="page-heading">
+
         <div>
+
           <p className="eyebrow">
             Workspace /
           </p>
 
-          <h1>AI Assistant</h1>
+          <h1>
+            AI Assistant
+          </h1>
 
           <p>
-            Ask questions using the DevFlow X AI service.
+            Ask questions using the
+            DevFlow X AI service.
           </p>
+
         </div>
+
       </div>
 
-      {/* AI Health Check */}
+      {/* AI HEALTH */}
+
       <div className="ai-health-row">
+
         <button
           type="button"
           className="primary-button"
@@ -322,57 +401,86 @@ function AIAssistant() {
         <span className="status-text">
           {healthStatus}
         </span>
+
       </div>
 
-      {/* Main AI Layout */}
+      {/* MAIN LAYOUT */}
+
       <div className="ai-layout">
-        {/* Chat Section */}
+
+        {/* CHAT */}
+
         <div className="ai-chat-card">
-          {/* Chat Header */}
+
+          {/* HEADER */}
+
           <div className="ai-card-header">
+
             <div className="ai-avatar">
               ✦
             </div>
 
             <div>
-              <h2>DevFlow X Assistant</h2>
+
+              <h2>
+                DevFlow X Assistant
+              </h2>
 
               <p>
-                Your AI assistant for development
-                and projects.
+                Your AI assistant for
+                development and projects.
               </p>
+
             </div>
+
           </div>
 
-          {/* Chat Messages */}
+          {/* MESSAGES */}
+
           <div
             className="chat-messages"
             aria-live="polite"
           >
-            {messages.map((message, index) => (
-              <div
-                key={`${message.role}-${index}`}
-                className={
-                  message.role === "user"
-                    ? "chat-message user-message"
-                    : "chat-message assistant-message"
-                }
-              >
-                <div className="message-label">
-                  {message.role === "user"
-                    ? "You"
-                    : "DevFlow X AI"}
+
+            {messages.map(
+              (message, index) => (
+
+                <div
+                  key={`${message.role}-${index}`}
+                  className={
+                    message.role ===
+                    "user"
+                      ? "chat-message user-message"
+                      : "chat-message assistant-message"
+                  }
+                >
+
+                  <div className="message-label">
+
+                    {message.role ===
+                    "user"
+                      ? "You"
+                      : "DevFlow X AI"}
+
+                  </div>
+
+                  <div className="message-content">
+
+                    {message.content}
+
+                  </div>
+
                 </div>
 
-                <div className="message-content">
-                  {message.content}
-                </div>
-              </div>
-            ))}
+              )
+            )}
 
-            {/* Loading Message */}
+            {/* LOADING */}
+
             {loading && (
+
               <div className="chat-message assistant-message">
+
                 <div className="message-label">
                   DevFlow X AI
                 </div>
@@ -380,12 +488,17 @@ function AIAssistant() {
                 <div className="message-content">
                   Thinking...
                 </div>
+
               </div>
+
             )}
+
           </div>
 
-          {/* Chat Input Area */}
+          {/* INPUT */}
+
           <div className="chat-input-area">
+
             <label htmlFor="ai-question">
               Your Question
             </label>
@@ -395,25 +508,34 @@ function AIAssistant() {
               id="ai-question"
               value={question}
               onChange={(event) =>
-                setQuestion(event.target.value)
+                setQuestion(
+                  event.target.value
+                )
               }
-              onKeyDown={handleKeyDown}
+              onKeyDown={
+                handleKeyDown
+              }
               rows={4}
               maxLength={4000}
-              placeholder="Ask about React, FastAPI, or MERN..."
+              placeholder="Ask about React, FastAPI, MERN..."
               disabled={loading}
             />
 
-            {/* Input Footer */}
+            {/* FOOTER */}
+
             <div className="chat-input-footer">
+
               <small>
                 Press Enter to send.
                 <br />
-                Use Shift + Enter for a new line.
+                Use Shift + Enter
+                for a new line.
               </small>
 
               <div className="chat-button-group">
-                {/* Clear Button */}
+
+                {/* CLEAR */}
+
                 <button
                   type="button"
                   className="secondary-button"
@@ -423,7 +545,8 @@ function AIAssistant() {
                   Clear
                 </button>
 
-                {/* Ask AI Button */}
+                {/* ASK AI */}
+
                 <button
                   type="button"
                   className="primary-button"
@@ -437,23 +560,33 @@ function AIAssistant() {
                     ? "Thinking..."
                     : "Ask AI"}
                 </button>
+
               </div>
+
             </div>
 
-            {/* Error Message */}
+            {/* ERROR */}
+
             {error && (
+
               <p className="ai-error-message">
                 {error}
               </p>
+
             )}
+
           </div>
+
         </div>
 
-        {/* Suggestions Section */}
-        <aside className="ai-suggestions-card">
-          <h3>Try asking</h3>
+        {/* SUGGESTIONS */}
 
-          {/* React Suggestion */}
+        <aside className="ai-suggestions-card">
+
+          <h3>
+            Try asking
+          </h3>
+
           <button
             type="button"
             className="suggestion-button"
@@ -466,7 +599,6 @@ function AIAssistant() {
             Explain React
           </button>
 
-          {/* React + FastAPI Suggestion */}
           <button
             type="button"
             className="suggestion-button"
@@ -479,7 +611,6 @@ function AIAssistant() {
             React + FastAPI
           </button>
 
-          {/* MongoDB + Express Suggestion */}
           <button
             type="button"
             className="suggestion-button"
@@ -492,7 +623,6 @@ function AIAssistant() {
             MongoDB + Express
           </button>
 
-          {/* Placement Suggestion */}
           <button
             type="button"
             className="suggestion-button"
@@ -505,7 +635,6 @@ function AIAssistant() {
             Placement roadmap
           </button>
 
-          {/* Project Suggestion */}
           <button
             type="button"
             className="suggestion-button"
@@ -517,8 +646,11 @@ function AIAssistant() {
           >
             Plan project tasks
           </button>
+
         </aside>
+
       </div>
+
     </div>
   );
 }
