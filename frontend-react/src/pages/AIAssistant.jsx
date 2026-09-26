@@ -1,14 +1,15 @@
-import { useRef, useState } from "react";
+import {
+  useRef,
+  useState
+} from "react";
 
-// ==================================================
-// API CONFIGURATION
-// ==================================================
+import {
+  testBackend,
+  testFastAPI,
+  checkAIHealth,
+  askAI
+} from "../services/aiApi";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://devflowx-zmlo.onrender.com/api";
-
-const BASE_URL = API_URL.replace(/\/$/, "");
 
 // ==================================================
 // INITIAL MESSAGE
@@ -16,229 +17,354 @@ const BASE_URL = API_URL.replace(/\/$/, "");
 
 const initialMessage = {
   role: "assistant",
+
   content:
-    "Hello! I am your DevFlow X AI Assistant. Ask me about React, FastAPI, MERN, programming, or your software projects.",
+    "Hello! I am your DevFlow X AI Assistant. Ask me about React, FastAPI, MERN, programming, or your software projects."
 };
+
 
 // ==================================================
 // AI ASSISTANT
 // ==================================================
 
 function AIAssistant() {
-  const [messages, setMessages] = useState([
-    initialMessage,
-  ]);
 
-  const [question, setQuestion] = useState("");
+  const [messages, setMessages] =
+    useState([
+      initialMessage
+    ]);
 
-  const [chatHistory, setChatHistory] = useState([]);
 
-  const [loading, setLoading] = useState(false);
+  const [question, setQuestion] =
+    useState("");
+
+
+  const [chatHistory, setChatHistory] =
+    useState([]);
+
+
+  const [loading, setLoading] =
+    useState(false);
+
 
   const [healthStatus, setHealthStatus] =
     useState("Not checked");
 
-  const [error, setError] = useState("");
 
-  const textareaRef = useRef(null);
+  const [error, setError] =
+    useState("");
+
+
+  const textareaRef =
+    useRef(null);
+
 
   // ==================================================
   // ADD MESSAGE
   // ==================================================
 
-  function addMessage(role, content) {
-    setMessages((previousMessages) => [
-      ...previousMessages,
-      {
-        role,
-        content,
-      },
-    ]);
+  function addMessage(
+    role,
+    content
+  ) {
+
+    setMessages(
+      (previousMessages) => [
+        ...previousMessages,
+
+        {
+          role,
+          content
+        }
+      ]
+    );
   }
+
+
+  // ==================================================
+  // TEST EXPRESS BACKEND
+  // ==================================================
+
+  async function checkBackend() {
+
+    setHealthStatus(
+      "Checking backend..."
+    );
+
+    setError("");
+
+
+    try {
+
+      const data =
+        await testBackend();
+
+
+      console.log(
+        "Express backend:",
+        data
+      );
+
+
+      setHealthStatus(
+        "Express backend connected"
+      );
+
+    } catch (backendError) {
+
+      console.error(
+        "Backend error:",
+        backendError
+      );
+
+
+      setHealthStatus(
+        "Express backend offline"
+      );
+
+
+      setError(
+        backendError.message ||
+        "Unable to connect to Express backend."
+      );
+    }
+  }
+
+
+  // ==================================================
+  // TEST EXPRESS → FASTAPI
+  // ==================================================
+
+  async function checkFastAPI() {
+
+    setHealthStatus(
+      "Testing FastAPI connection..."
+    );
+
+    setError("");
+
+
+    try {
+
+      const data =
+        await testFastAPI();
+
+
+      console.log(
+        "FastAPI connection:",
+        data
+      );
+
+
+      setHealthStatus(
+        "Express → FastAPI connected"
+      );
+
+    } catch (fastAPIError) {
+
+      console.error(
+        "FastAPI error:",
+        fastAPIError
+      );
+
+
+      setHealthStatus(
+        "FastAPI connection failed"
+      );
+
+
+      setError(
+        fastAPIError.message ||
+        "Unable to connect to FastAPI."
+      );
+    }
+  }
+
 
   // ==================================================
   // CHECK AI HEALTH
   // ==================================================
 
-  async function checkAIHealth() {
-    setHealthStatus("Checking...");
+  async function handleAIHealth() {
+
+    setHealthStatus(
+      "Checking AI service..."
+    );
+
     setError("");
 
+
     try {
-      const healthURL =
-        `${BASE_URL}/ai/health`;
+
+      const data =
+        await checkAIHealth();
+
 
       console.log(
-        "Checking AI health:",
-        healthURL
-      );
-
-      const response = await fetch(
-        healthURL,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      console.log(
-        "AI health response:",
+        "AI health:",
         data
       );
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-          data.detail ||
-          data.error ||
-          `Health check failed: ${response.status}`
-        );
-      }
 
       if (
         data.status === "healthy" ||
-        data.status === "online"
+        data.status === "online" ||
+        data.success === true
       ) {
+
         setHealthStatus(
           "AI service is healthy"
         );
+
       } else {
+
         setHealthStatus(
           data.message ||
           data.status ||
-          "AI service is connected"
+          "AI service connected"
         );
       }
 
     } catch (healthError) {
+
       console.error(
         "AI health error:",
         healthError
       );
 
+
       setHealthStatus(
-        "Backend is offline"
+        "AI service offline"
       );
 
+
       setError(
-        "Unable to connect to the AI backend."
+        healthError.message ||
+        "Unable to connect to AI service."
       );
     }
   }
+
+
+  // ==================================================
+  // TEST ALL CONNECTIONS
+  // ==================================================
+
+  async function testAllConnections() {
+
+    setHealthStatus(
+      "Testing connections..."
+    );
+
+    setError("");
+
+
+    try {
+
+      await testBackend();
+
+
+      await testFastAPI();
+
+
+      const aiHealth =
+        await checkAIHealth();
+
+
+      console.log(
+        "All connection tests:",
+        aiHealth
+      );
+
+
+      setHealthStatus(
+        "Frontend → Express → FastAPI → AI connected"
+      );
+
+    } catch (connectionError) {
+
+      console.error(
+        "Connection test error:",
+        connectionError
+      );
+
+
+      setHealthStatus(
+        "Connection test failed"
+      );
+
+
+      setError(
+        connectionError.message ||
+        "One or more services are unavailable."
+      );
+    }
+  }
+
 
   // ==================================================
   // ASK AI
   // ==================================================
 
-  async function askAI() {
+  async function handleAskAI() {
+
     const trimmedQuestion =
       question.trim();
 
+
     if (!trimmedQuestion) {
+
       setError(
         "Please enter a question first."
       );
+
       return;
     }
+
 
     if (loading) {
       return;
     }
 
+
     setError("");
 
-    // Show user's message
+
+    // Show user message
     addMessage(
       "user",
       trimmedQuestion
     );
 
+
     // Clear input
     setQuestion("");
+
 
     // Start loading
     setLoading(true);
 
+
     try {
-      const aiURL =
-        `${BASE_URL}/ai/ask`;
 
       console.log(
-        "AI URL:",
-        aiURL
+        "Sending AI request:",
+        trimmedQuestion
       );
 
-      console.log(
-        "AI Request:",
-        {
-          message: trimmedQuestion,
-          history: chatHistory,
-        }
-      );
 
-      const response = await fetch(
-        aiURL,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Accept:
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            message:
-              trimmedQuestion,
-
-            history:
-              chatHistory,
-          }),
-        }
-      );
-
-      const responseText =
-        await response.text();
-
-      console.log(
-        "AI Status:",
-        response.status
-      );
-
-      console.log(
-        "AI Raw Response:",
-        responseText
-      );
-
-      let data;
-
-      try {
-        data =
-          JSON.parse(responseText);
-      } catch {
-        throw new Error(
-          `Invalid server response. Status: ${response.status}`
+      const data =
+        await askAI(
+          trimmedQuestion,
+          chatHistory
         );
-      }
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-          data.detail ||
-          data.error ||
-          `AI request failed: ${response.status}`
-        );
-      }
 
-      // ==================================================
-      // GET AI REPLY
-      // ==================================================
+      console.log(
+        "AI response:",
+        data
+      );
+
 
       const aiReply =
         data.reply ||
@@ -247,50 +373,60 @@ function AIAssistant() {
         data.message ||
         "The AI returned an empty response.";
 
+
       // Show AI response
       addMessage(
         "assistant",
         aiReply
       );
 
-      // ==================================================
-      // UPDATE CHAT HISTORY
-      // ==================================================
 
+      // Update history
       const updatedHistory = [
+
         ...chatHistory,
 
         {
           role: "user",
-          content:
-            trimmedQuestion,
+          content: trimmedQuestion
         },
 
         {
           role: "assistant",
-          content:
-            aiReply,
-        },
+          content: aiReply
+        }
+
       ];
+
 
       // Keep latest 20 messages
       setChatHistory(
         updatedHistory.slice(-20)
       );
 
+
+      setHealthStatus(
+        "AI response received"
+      );
+
+
     } catch (chatError) {
+
       console.error(
         "AI chat error:",
         chatError
       );
 
+
       const errorMessage =
         chatError.message ||
         "Unable to connect to the AI service.";
 
+
       setError(
         errorMessage
       );
+
 
       addMessage(
         "assistant",
@@ -298,24 +434,30 @@ function AIAssistant() {
       );
 
     } finally {
+
       setLoading(false);
+
     }
   }
+
 
   // ==================================================
   // KEYBOARD HANDLER
   // ==================================================
 
   function handleKeyDown(event) {
+
     if (
       event.key === "Enter" &&
       !event.shiftKey
     ) {
+
       event.preventDefault();
 
-      askAI();
+      handleAskAI();
     }
   }
+
 
   // ==================================================
   // SUGGESTION
@@ -324,43 +466,59 @@ function AIAssistant() {
   function useSuggestion(
     suggestion
   ) {
+
     setQuestion(
       suggestion
     );
 
+
     setError("");
 
+
     setTimeout(() => {
-      textareaRef.current?.focus();
+
+      textareaRef
+        .current
+        ?.focus();
+
     }, 0);
   }
+
 
   // ==================================================
   // CLEAR CHAT
   // ==================================================
 
   function clearChat() {
+
     setMessages([
-      initialMessage,
+      initialMessage
     ]);
+
 
     setChatHistory([]);
 
+
     setQuestion("");
 
+
     setError("");
+
 
     setHealthStatus(
       "Not checked"
     );
   }
 
+
   // ==================================================
   // JSX
   // ==================================================
 
   return (
+
     <div className="ai-assistant-page">
+
 
       {/* PAGE HEADING */}
 
@@ -372,9 +530,11 @@ function AIAssistant() {
             Workspace /
           </p>
 
+
           <h1>
             AI Assistant
           </h1>
+
 
           <p>
             Ask questions using the
@@ -385,18 +545,50 @@ function AIAssistant() {
 
       </div>
 
-      {/* AI HEALTH */}
+
+      {/* CONNECTION BUTTONS */}
 
       <div className="ai-health-row">
 
         <button
           type="button"
           className="primary-button"
-          onClick={checkAIHealth}
+          onClick={testAllConnections}
+          disabled={loading}
+        >
+          Test All Connections
+        </button>
+
+
+        <button
+          type="button"
+          className="primary-button"
+          onClick={checkBackend}
+          disabled={loading}
+        >
+          Test Backend
+        </button>
+
+
+        <button
+          type="button"
+          className="primary-button"
+          onClick={checkFastAPI}
+          disabled={loading}
+        >
+          Test FastAPI
+        </button>
+
+
+        <button
+          type="button"
+          className="primary-button"
+          onClick={handleAIHealth}
           disabled={loading}
         >
           Check AI Health
         </button>
+
 
         <span className="status-text">
           {healthStatus}
@@ -404,13 +596,16 @@ function AIAssistant() {
 
       </div>
 
+
       {/* MAIN LAYOUT */}
 
       <div className="ai-layout">
 
+
         {/* CHAT */}
 
         <div className="ai-chat-card">
+
 
           {/* HEADER */}
 
@@ -420,11 +615,13 @@ function AIAssistant() {
               ✦
             </div>
 
+
             <div>
 
               <h2>
                 DevFlow X Assistant
               </h2>
+
 
               <p>
                 Your AI assistant for
@@ -434,6 +631,7 @@ function AIAssistant() {
             </div>
 
           </div>
+
 
           {/* MESSAGES */}
 
@@ -448,8 +646,7 @@ function AIAssistant() {
                 <div
                   key={`${message.role}-${index}`}
                   className={
-                    message.role ===
-                    "user"
+                    message.role === "user"
                       ? "chat-message user-message"
                       : "chat-message assistant-message"
                   }
@@ -457,12 +654,13 @@ function AIAssistant() {
 
                   <div className="message-label">
 
-                    {message.role ===
-                    "user"
+                    {message.role === "user"
                       ? "You"
-                      : "DevFlow X AI"}
+                      : "DevFlow X AI"
+                    }
 
                   </div>
+
 
                   <div className="message-content">
 
@@ -475,6 +673,7 @@ function AIAssistant() {
               )
             )}
 
+
             {/* LOADING */}
 
             {loading && (
@@ -484,6 +683,7 @@ function AIAssistant() {
                 <div className="message-label">
                   DevFlow X AI
                 </div>
+
 
                 <div className="message-content">
                   Thinking...
@@ -495,6 +695,7 @@ function AIAssistant() {
 
           </div>
 
+
           {/* INPUT */}
 
           <div className="chat-input-area">
@@ -502,6 +703,7 @@ function AIAssistant() {
             <label htmlFor="ai-question">
               Your Question
             </label>
+
 
             <textarea
               ref={textareaRef}
@@ -521,6 +723,7 @@ function AIAssistant() {
               disabled={loading}
             />
 
+
             {/* FOOTER */}
 
             <div className="chat-input-footer">
@@ -532,7 +735,9 @@ function AIAssistant() {
                 for a new line.
               </small>
 
+
               <div className="chat-button-group">
+
 
                 {/* CLEAR */}
 
@@ -545,25 +750,30 @@ function AIAssistant() {
                   Clear
                 </button>
 
+
                 {/* ASK AI */}
 
                 <button
                   type="button"
                   className="primary-button"
-                  onClick={askAI}
+                  onClick={handleAskAI}
                   disabled={
                     loading ||
                     !question.trim()
                   }
                 >
+
                   {loading
                     ? "Thinking..."
-                    : "Ask AI"}
+                    : "Ask AI"
+                  }
+
                 </button>
 
               </div>
 
             </div>
+
 
             {/* ERROR */}
 
@@ -579,6 +789,7 @@ function AIAssistant() {
 
         </div>
 
+
         {/* SUGGESTIONS */}
 
         <aside className="ai-suggestions-card">
@@ -586,6 +797,7 @@ function AIAssistant() {
           <h3>
             Try asking
           </h3>
+
 
           <button
             type="button"
@@ -599,6 +811,7 @@ function AIAssistant() {
             Explain React
           </button>
 
+
           <button
             type="button"
             className="suggestion-button"
@@ -610,6 +823,7 @@ function AIAssistant() {
           >
             React + FastAPI
           </button>
+
 
           <button
             type="button"
@@ -623,6 +837,7 @@ function AIAssistant() {
             MongoDB + Express
           </button>
 
+
           <button
             type="button"
             className="suggestion-button"
@@ -634,6 +849,7 @@ function AIAssistant() {
           >
             Placement roadmap
           </button>
+
 
           <button
             type="button"
@@ -652,7 +868,9 @@ function AIAssistant() {
       </div>
 
     </div>
+
   );
 }
+
 
 export default AIAssistant;
