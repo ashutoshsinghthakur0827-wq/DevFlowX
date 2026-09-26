@@ -1,4 +1,3 @@
-
 import os
 import traceback
 from typing import List, Literal
@@ -46,18 +45,22 @@ app = FastAPI(
 
 
 # ============================================================
-# 4. CORS CONFIGURATION
+# 4. CORS
 # ============================================================
+
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+if FRONTEND_URL:
+    allowed_origins.append(FRONTEND_URL)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        FRONTEND_URL,
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -68,10 +71,8 @@ app.add_middleware(
 # 5. PYDANTIC MODELS
 # ============================================================
 
-
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-
     content: str = Field(
         ...,
         min_length=1,
@@ -115,8 +116,9 @@ class ChatResponse(BaseModel):
 SYSTEM_PROMPT = """
 You are DevFlow X AI Assistant.
 
-DevFlow X is a software engineering management platform
-built using:
+DevFlow X is a software engineering management platform.
+
+Technology stack:
 
 - React
 - JavaScript
@@ -134,45 +136,39 @@ Your responsibilities:
 
 1. Explain programming concepts in simple language.
 2. Help beginners learn MERN stack development.
-3. Explain React, JavaScript, Python, FastAPI, and MongoDB.
+3. Explain React, JavaScript, Python, FastAPI and MongoDB.
 4. Help debug coding errors.
 5. Suggest software project ideas.
-6. Help plan development tasks and roadmaps.
-7. Explain AI, LLMs, RAG, and AI agents.
+6. Help plan development tasks.
+7. Explain AI, LLMs, RAG and AI agents.
 8. Provide beginner-friendly code examples.
-9. Explain code step by step when requested.
-10. Give practical placement preparation guidance.
+9. Explain code step by step.
+10. Help with placement preparation.
 
 Response guidelines:
 
-- Use simple and clear English.
-- Use headings and bullet points when helpful.
+- Use simple English.
+- Use headings and bullet points when useful.
 - Explain difficult concepts with examples.
-- Provide beginner-friendly explanations.
-- Do not invent test results, credentials, or API responses.
-- Never expose API keys or confidential information.
+- Give beginner-friendly code.
+- Do not expose API keys.
+- Do not invent test results.
+- Do not expose confidential information.
 - If you do not know something, clearly say so.
-- Give safe and legal technical guidance.
 """
 
 
 # ============================================================
-# 7. CHECK GROQ CONFIGURATION
+# 7. GROQ CONFIGURATION
 # ============================================================
 
-
 def check_groq_configuration():
-    """
-    Check whether the Groq API key and client are configured.
-    """
 
     if not GROQ_API_KEY or client is None:
+
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Groq API key is not configured. "
-                "Check the GROQ_API_KEY environment variable."
-            ),
+            detail="GROQ_API_KEY is not configured."
         )
 
 
@@ -180,26 +176,23 @@ def check_groq_configuration():
 # 8. GENERATE AI RESPONSE
 # ============================================================
 
-
 def generate_ai_response(
     user_message: str,
     history: List[ChatMessage],
 ):
-    """
-    Send the user message and conversation history to Groq.
-    """
 
     check_groq_configuration()
 
-    system_message = {
-        "role": "system",
-        "content": SYSTEM_PROMPT,
-    }
+    messages = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT,
+        }
+    ]
 
-    messages = [system_message]
-
-    # Add the last 10 history messages
+    # Add last 10 messages
     for item in history[-10:]:
+
         messages.append(
             {
                 "role": item.role,
@@ -207,7 +200,7 @@ def generate_ai_response(
             }
         )
 
-    # Add the current user message
+    # Add current message
     messages.append(
         {
             "role": "user",
@@ -216,6 +209,7 @@ def generate_ai_response(
     )
 
     try:
+
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=messages,
@@ -224,17 +218,19 @@ def generate_ai_response(
         )
 
         if not completion.choices:
+
             raise HTTPException(
                 status_code=502,
-                detail="The AI returned no choices.",
+                detail="AI returned no response."
             )
 
         reply = completion.choices[0].message.content
 
         if not reply or not reply.strip():
+
             raise HTTPException(
                 status_code=502,
-                detail="The AI returned an empty response.",
+                detail="AI returned an empty response."
             )
 
         return ChatResponse(
@@ -246,27 +242,26 @@ def generate_ai_response(
         raise
 
     except Exception as error:
-        print("\n========== GROQ AI ERROR ==========")
-        print("Error type:", type(error).__name__)
-        print("Error message:", str(error))
+
+        print("\n========== GROQ ERROR ==========")
+        print("Error:", type(error).__name__)
+        print("Message:", str(error))
         traceback.print_exc()
-        print("========== END GROQ AI ERROR ==========\n")
+        print("================================\n")
 
         raise HTTPException(
             status_code=502,
-            detail=(
-                "Unable to get a response from the Groq AI service."
-            ),
+            detail="Unable to get response from Groq AI."
         )
 
 
 # ============================================================
-# 9. ROOT ROUTE
+# 9. ROOT
 # ============================================================
-
 
 @app.get("/")
 def root():
+
     return {
         "success": True,
         "message": "DevFlow X AI Service is running",
@@ -275,13 +270,14 @@ def root():
 
 
 # ============================================================
-# 10. HEALTH CHECK ROUTE
+# 10. HEALTH
 # ============================================================
-
 
 @app.get("/api/ai/health")
 def ai_health():
+
     if not GROQ_API_KEY or client is None:
+
         return {
             "success": False,
             "status": "not_configured",
@@ -296,25 +292,14 @@ def ai_health():
 
 
 # ============================================================
-# 11. CHAT ROUTE
+# 11. CHAT
 # ============================================================
-
 
 @app.post(
     "/api/ai/chat",
     response_model=ChatResponse,
 )
 def chat_with_ai(request: ChatRequest):
-    """
-    Chat endpoint.
-
-    Request body:
-
-    {
-        "message": "Explain React",
-        "history": []
-    }
-    """
 
     return generate_ai_response(
         user_message=request.message,
@@ -323,25 +308,14 @@ def chat_with_ai(request: ChatRequest):
 
 
 # ============================================================
-# 12. ASK ROUTE FOR NODE.JS EXPRESS BACKEND
+# 12. ASK
 # ============================================================
-
 
 @app.post(
     "/api/ai/ask",
     response_model=ChatResponse,
 )
 def ask_ai(request: AskRequest):
-    """
-    Ask endpoint for the Node.js backend.
-
-    Request body:
-
-    {
-        "question": "Explain React",
-        "history": []
-    }
-    """
 
     return generate_ai_response(
         user_message=request.question,
@@ -350,18 +324,19 @@ def ask_ai(request: AskRequest):
 
 
 # ============================================================
-# 13. LOCAL DEVELOPMENT ENTRY POINT
+# 13. LOCAL DEVELOPMENT
 # ============================================================
 
-
 if __name__ == "__main__":
+
     import uvicorn
 
-    port = int(os.getenv("PORT", "8000"))
+    port = int(
+        os.getenv("PORT", "8000")
+    )
 
     uvicorn.run(
-        "app.main:app",
+        app,
         host="0.0.0.0",
         port=port,
-        reload=True,
     )
