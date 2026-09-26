@@ -58,6 +58,9 @@ allowed_origins = [
 if FRONTEND_URL:
     allowed_origins.append(FRONTEND_URL)
 
+# Remove duplicate origins
+allowed_origins = list(set(allowed_origins))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -73,6 +76,7 @@ app.add_middleware(
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
+
     content: str = Field(
         ...,
         min_length=1,
@@ -200,7 +204,7 @@ def generate_ai_response(
             }
         )
 
-    # Add current message
+    # Add current user message
     messages.append(
         {
             "role": "user",
@@ -270,7 +274,22 @@ def root():
 
 
 # ============================================================
-# 10. HEALTH
+# 10. FASTAPI CONNECTION TEST
+# ============================================================
+
+@app.get("/api/test-fastapi")
+def test_fastapi():
+
+    return {
+        "success": True,
+        "message": "FastAPI is connected successfully",
+        "service": "DevFlow X AI Service",
+        "status": "online",
+    }
+
+
+# ============================================================
+# 11. HEALTH CHECK
 # ============================================================
 
 @app.get("/api/ai/health")
@@ -292,7 +311,7 @@ def ai_health():
 
 
 # ============================================================
-# 11. CHAT
+# 12. CHAT API
 # ============================================================
 
 @app.post(
@@ -308,7 +327,7 @@ def chat_with_ai(request: ChatRequest):
 
 
 # ============================================================
-# 12. ASK
+# 13. ASK API
 # ============================================================
 
 @app.post(
@@ -324,7 +343,7 @@ def ask_ai(request: AskRequest):
 
 
 # ============================================================
-# 13. LOCAL DEVELOPMENT
+# 14. LOCAL DEVELOPMENT
 # ============================================================
 
 if __name__ == "__main__":
