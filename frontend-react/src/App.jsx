@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// Components
+// Layout Components
 import Sidebar from "./components/Sidebar.jsx";
 import Topbar from "./components/Topbar.jsx";
 
@@ -17,18 +17,19 @@ import Settings from "./pages/Settings.jsx";
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Open sidebar on mobile
+  // Open mobile sidebar
   function openSidebar() {
     setSidebarOpen(true);
   }
 
-  // Close sidebar
+  // Close mobile sidebar
   function closeSidebar() {
     setSidebarOpen(false);
   }
 
   return (
     <div className="app-layout">
+
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -43,18 +44,28 @@ function App() {
         closeSidebar={closeSidebar}
       />
 
-      {/* Main Layout */}
+      {/* Main Application Area */}
       <div className="main-layout">
-        {/* Topbar */}
-        <Topbar openSidebar={openSidebar} />
 
-        {/* Main Content */}
+        {/* Top Navigation */}
+        <Topbar
+          openSidebar={openSidebar}
+        />
+
+        {/* Main Page Content */}
         <main className="main-content">
+
           <Routes>
+
             {/* Default Route */}
             <Route
               path="/"
-              element={<Navigate to="/dashboard" replace />}
+              element={
+                <Navigate
+                  to="/dashboard"
+                  replace
+                />
+              }
             />
 
             {/* Dashboard */}
@@ -102,9 +113,16 @@ function App() {
             {/* Unknown Route */}
             <Route
               path="*"
-              element={<Navigate to="/dashboard" replace />}
+              element={
+                <Navigate
+                  to="/dashboard"
+                  replace
+                />
+              }
             />
+
           </Routes>
+
         </main>
       </div>
     </div>
