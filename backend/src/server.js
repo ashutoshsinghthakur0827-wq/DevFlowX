@@ -14,7 +14,6 @@ const authRoutes = require("./routes/authRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 const teamRoutes = require("./routes/teamRoutes");
-
 const aiRoutes = require("./routes/aiRoutes");
 
 
@@ -45,18 +44,18 @@ const allowedOrigins = [
     "https://devflowx-frontend.onrender.com",
 ];
 
-
 if (process.env.CLIENT_URL) {
     allowedOrigins.push(
         process.env.CLIENT_URL
     );
 }
 
-
 app.use(
     cors({
         origin: function (origin, callback) {
 
+            // Allow requests without origin
+            // such as Postman/server-to-server requests
             if (!origin) {
                 return callback(null, true);
             }
