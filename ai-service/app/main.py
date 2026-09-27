@@ -19,7 +19,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 FRONTEND_URL = os.getenv(
     "FRONTEND_URL",
-    "http://localhost:5173"
+    "https://dev-flow-x.vercel.app"
 )
 
 
@@ -51,6 +51,13 @@ if GROQ_API_KEY:
 # ============================================================
 
 allowed_origins = [
+    # Production frontend
+    "https://dev-flow-x.vercel.app",
+
+    # Environment variable frontend
+    FRONTEND_URL,
+
+    # Local development
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 
@@ -59,13 +66,13 @@ allowed_origins = [
 ]
 
 
-if FRONTEND_URL:
-    allowed_origins.append(FRONTEND_URL)
-
-
-# Remove duplicates
+# Remove empty values and duplicates
 allowed_origins = list(
-    set(allowed_origins)
+    set(
+        origin
+        for origin in allowed_origins
+        if origin
+    )
 )
 
 
@@ -85,7 +92,6 @@ app.add_middleware(
 # ============================================================
 # 5. PYDANTIC MODELS
 # ============================================================
-
 
 class ChatMessage(BaseModel):
 
@@ -224,9 +230,8 @@ def generate_ai_response(
         }
     ]
 
-
     # --------------------------------------------------------
-    # Add last 10 messages from conversation history
+    # Add last 10 messages
     # --------------------------------------------------------
 
     for item in history[-10:]:
@@ -238,7 +243,6 @@ def generate_ai_response(
             }
         )
 
-
     # --------------------------------------------------------
     # Add current user message
     # --------------------------------------------------------
@@ -249,7 +253,6 @@ def generate_ai_response(
             "content": user_message.strip()
         }
     )
-
 
     try:
 
@@ -268,7 +271,6 @@ def generate_ai_response(
             max_tokens=1200
         )
 
-
         # ----------------------------------------------------
         # Check response
         # ----------------------------------------------------
@@ -280,7 +282,6 @@ def generate_ai_response(
                 detail="AI returned no response."
             )
 
-
         reply = (
             completion
             .choices[0]
@@ -288,25 +289,21 @@ def generate_ai_response(
             .content
         )
 
-
         if not reply:
 
             raise HTTPException(
                 status_code=502,
                 detail="AI returned an empty response."
             )
-
 
         reply = reply.strip()
 
-
         if not reply:
 
             raise HTTPException(
                 status_code=502,
                 detail="AI returned an empty response."
             )
-
 
         return ChatResponse(
 
@@ -315,11 +312,9 @@ def generate_ai_response(
             model="openai/gpt-oss-120b"
         )
 
-
     except HTTPException:
 
         raise
-
 
     except Exception as error:
 
@@ -342,7 +337,6 @@ def generate_ai_response(
         print(
             "================================\n"
         )
-
 
         raise HTTPException(
 
@@ -429,7 +423,6 @@ def ai_health():
             "groq": False
         }
 
-
     if client is None:
 
         return {
@@ -442,7 +435,6 @@ def ai_health():
 
             "groq": False
         }
-
 
     return {
 
@@ -504,14 +496,12 @@ if __name__ == "__main__":
 
     import uvicorn
 
-
     port = int(
         os.getenv(
             "PORT",
             "8000"
         )
     )
-
 
     uvicorn.run(
 
