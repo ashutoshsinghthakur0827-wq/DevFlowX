@@ -36,35 +36,108 @@ const PORT = process.env.PORT || 5000;
 // ============================================================
 
 const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
 
+    // Local development
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+
+    // Current Vercel frontend
+    "https://dev-flow-kbu9odobi-hack-tech.vercel.app",
+
+    // Previous Vercel deployments
     "https://dev-flow-7nbl3z6xl-hack-tech.vercel.app",
+    "https://dev-flow-dwve5i1kz-hack-tech.vercel.app",
     "https://dev-flow-x.vercel.app",
+
+    // Other frontend deployment
     "https://devflowx-frontend.onrender.com",
 ];
 
+
+// ============================================================
+// CLIENT URL FROM RENDER ENVIRONMENT
+// ============================================================
+
 if (process.env.CLIENT_URL) {
+
     allowedOrigins.push(
         process.env.CLIENT_URL
     );
 }
 
+
+// ============================================================
+// REMOVE DUPLICATES
+// ============================================================
+
+const uniqueOrigins = [
+    ...new Set(
+        allowedOrigins
+    )
+];
+
+
+console.log(
+    "Allowed CORS origins:"
+);
+
+uniqueOrigins.forEach(
+    (origin) => {
+        console.log(
+            " -",
+            origin
+        );
+    }
+);
+
+
+// ============================================================
+// CORS MIDDLEWARE
+// ============================================================
+
 app.use(
     cors({
-        origin: function (origin, callback) {
 
-            // Allow requests without origin
-            // such as Postman/server-to-server requests
+        origin: function (
+            origin,
+            callback
+        ) {
+
+            // Allow requests without
+            // an Origin header.
+            //
+            // Examples:
+            // Postman
+            // curl
+            // server-to-server requests
+
             if (!origin) {
-                return callback(null, true);
+
+                return callback(
+                    null,
+                    true
+                );
             }
+
+
+            // Check allowed origins
 
             if (
-                allowedOrigins.includes(origin)
+                uniqueOrigins.includes(
+                    origin
+                )
             ) {
-                return callback(null, true);
+
+                return callback(
+                    null,
+                    true
+                );
             }
+
+
+            // Block unknown origin
 
             console.log(
                 "Blocked CORS origin:",
@@ -72,12 +145,41 @@ app.use(
             );
 
             return callback(
-                new Error("Not allowed by CORS")
+                new Error(
+                    "Not allowed by CORS"
+                )
             );
         },
 
+
         credentials: true,
+
+
+        methods: [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS"
+        ],
+
+
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization"
+        ]
     })
+);
+
+
+// ============================================================
+// PREFLIGHT REQUEST
+// ============================================================
+
+app.options(
+    "*",
+    cors()
 );
 
 
@@ -90,6 +192,7 @@ app.use(
         limit: "10mb",
     })
 );
+
 
 app.use(
     express.urlencoded({
@@ -124,11 +227,18 @@ app.get(
     (req, res) => {
 
         res.json({
+
             success: true,
-            message: "DevFlow X backend is running",
-            service: "Express API",
+
+            message:
+                "DevFlow X backend is running",
+
+            service:
+                "Express API",
+
             environment:
-                process.env.NODE_ENV || "development",
+                process.env.NODE_ENV ||
+                "development",
         });
     }
 );
@@ -143,8 +253,17 @@ app.get(
     (req, res) => {
 
         res.json({
+
             success: true,
-            message: "Express backend is healthy",
+
+            message:
+                "Express backend is healthy",
+
+            cors: true,
+
+            frontend:
+                process.env.CLIENT_URL ||
+                "configured in server",
         });
     }
 );
@@ -159,15 +278,18 @@ app.use(
     authRoutes
 );
 
+
 app.use(
     "/api/projects",
     projectRoutes
 );
 
+
 app.use(
     "/api/tasks",
     taskRoutes
 );
+
 
 app.use(
     "/api/teams",
@@ -191,7 +313,9 @@ app.use(
 
 async function connectDatabase() {
 
-    if (!process.env.MONGO_URI) {
+    if (
+        !process.env.MONGO_URI
+    ) {
 
         console.log(
             "MONGO_URI is not configured."
@@ -199,6 +323,7 @@ async function connectDatabase() {
 
         return;
     }
+
 
     try {
 
@@ -227,13 +352,17 @@ async function connectDatabase() {
 app.use(
     (req, res) => {
 
-        res.status(404).json({
+        res.status(
+            404
+        ).json({
 
             success: false,
 
-            message: "Route not found",
+            message:
+                "Route not found",
 
-            path: req.originalUrl,
+            path:
+                req.originalUrl,
         });
     }
 );
@@ -244,15 +373,22 @@ app.use(
 // ============================================================
 
 app.use(
-    (error, req, res, next) => {
+    (
+        error,
+        req,
+        res,
+        next
+    ) => {
 
         console.error(
             "Server error:",
             error
         );
 
+
         res.status(
-            error.status || 500
+            error.status ||
+            500
         ).json({
 
             success: false,
@@ -273,6 +409,7 @@ async function startServer() {
 
     await connectDatabase();
 
+
     app.listen(
         PORT,
         "0.0.0.0",
@@ -282,12 +419,14 @@ async function startServer() {
                 `DevFlow X backend running on port ${PORT}`
             );
 
+
             console.log(
                 "AI service configured:",
                 Boolean(
                     process.env.AI_SERVICE_URL
                 )
             );
+
 
             console.log(
                 "AI service URL:",
