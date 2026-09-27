@@ -1,72 +1,60 @@
 import os
-import traceback
-from typing import List, Literal
+from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from groq import Groq
 
-
-# ============================================================
-# 1. LOAD ENVIRONMENT VARIABLES
-# ============================================================
-
 load_dotenv()
+
+
+# =========================================================
+# ENVIRONMENT VARIABLES
+# =========================================================
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 FRONTEND_URL = os.getenv(
     "FRONTEND_URL",
-    "https://dev-flow-x.vercel.app"
+    "https://dev-flow-dwve5i1kz-hack-tech.vercel.app"
 )
 
 
-# ============================================================
-# 2. FASTAPI APPLICATION
-# ============================================================
+# =========================================================
+# FASTAPI APP
+# =========================================================
 
 app = FastAPI(
     title="DevFlow X AI Service",
-    description="AI assistant backend for DevFlow X",
-    version="1.0.0",
+    description="FastAPI AI backend for DevFlow X",
+    version="1.0.0"
 )
 
 
-# ============================================================
-# 3. GROQ CLIENT
-# ============================================================
-
-client = None
-
-if GROQ_API_KEY:
-    client = Groq(
-        api_key=GROQ_API_KEY
-    )
-
-
-# ============================================================
-# 4. CORS CONFIGURATION
-# ============================================================
+# =========================================================
+# CORS
+# =========================================================
 
 allowed_origins = [
-    # Production frontend
+    # Current Vercel frontend
+    "https://dev-flow-dwve5i1kz-hack-tech.vercel.app",
+
+    # Previous Vercel frontend
     "https://dev-flow-x.vercel.app",
 
-    # Environment variable frontend
+    # Environment variable
     FRONTEND_URL,
 
     # Local development
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-
-# Remove empty values and duplicates
+# Remove empty and duplicate values
 allowed_origins = list(
     set(
         origin
@@ -75,153 +63,113 @@ allowed_origins = list(
     )
 )
 
-
 app.add_middleware(
     CORSMiddleware,
-
     allow_origins=allowed_origins,
-
     allow_credentials=True,
-
     allow_methods=["*"],
-
     allow_headers=["*"],
 )
 
 
-# ============================================================
-# 5. PYDANTIC MODELS
-# ============================================================
+# =========================================================
+# GROQ CLIENT
+# =========================================================
+
+groq_client = None
+
+if GROQ_API_KEY:
+    groq_client = Groq(
+        api_key=GROQ_API_KEY
+    )
+
+
+# =========================================================
+# REQUEST MODELS
+# =========================================================
 
 class ChatMessage(BaseModel):
-
-    role: Literal[
-        "user",
-        "assistant"
-    ]
-
-    content: str = Field(
-        ...,
-        min_length=1,
-        max_length=8000
-    )
+    role: str
+    content: str
 
 
 class ChatRequest(BaseModel):
-
-    message: str = Field(
-        ...,
-        min_length=1,
-        max_length=4000
-    )
-
-    history: List[ChatMessage] = Field(
-        default_factory=list
-    )
+    message: str
+    history: Optional[List[ChatMessage]] = []
 
 
 class AskRequest(BaseModel):
-
-    question: str = Field(
-        ...,
-        min_length=1,
-        max_length=4000
-    )
-
-    history: List[ChatMessage] = Field(
-        default_factory=list
-    )
+    question: str
+    history: Optional[List[ChatMessage]] = []
 
 
 class ChatResponse(BaseModel):
-
-    reply: str
-
-    model: str
+    success: bool
+    answer: str
 
 
-# ============================================================
-# 6. SYSTEM PROMPT
-# ============================================================
+# =========================================================
+# SYSTEM PROMPT
+# =========================================================
 
 SYSTEM_PROMPT = """
 You are DevFlow X AI Assistant.
 
-DevFlow X is a software engineering management platform.
-
-Technology stack:
-
-- React
-- JavaScript
-- Node.js
-- Express.js
-- MongoDB
-- FastAPI
-- Python
-- Groq API
-- AI Agents
-- RAG
-- Software Project Management
+You are a helpful AI assistant for software developers and students.
 
 Your responsibilities:
 
 1. Explain programming concepts in simple language.
-2. Help beginners learn MERN stack development.
-3. Explain React, JavaScript, Python, FastAPI and MongoDB.
-4. Help debug coding errors.
-5. Suggest software project ideas.
-6. Help plan development tasks.
-7. Explain AI, LLMs, RAG and AI agents.
-8. Provide beginner-friendly code examples.
-9. Explain code step by step.
-10. Help with placement preparation.
+2. Help with Java, Python, JavaScript, React, Node.js,
+   FastAPI, APIs, databases and Git.
+3. Help users debug programming errors.
+4. Provide step-by-step solutions.
+5. Help students understand technical concepts.
+6. Provide clean and beginner-friendly code.
+7. Explain code line by line when requested.
+8. Avoid unnecessary complexity.
+9. If the user asks for code, provide working code.
+10. Be concise but useful.
 
-Response guidelines:
-
-- Use simple English.
-- Use headings when useful.
-- Use bullet points when useful.
-- Explain difficult concepts with examples.
-- Give beginner-friendly code.
-- Explain code step by step.
-- Do not expose API keys.
-- Do not expose confidential information.
-- Do not invent test results.
-- If you do not know something, clearly say so.
+Always try to make technical topics easy to understand.
 """
 
 
-# ============================================================
-# 7. CHECK GROQ CONFIGURATION
-# ============================================================
+# =========================================================
+# GROQ CONFIGURATION
+# =========================================================
 
 def check_groq_configuration():
 
     if not GROQ_API_KEY:
+        return False, "GROQ_API_KEY is not configured."
 
+    if groq_client is None:
+        return False, "Groq client is not initialized."
+
+    return True, "Groq is configured."
+
+
+# =========================================================
+# AI RESPONSE FUNCTION
+# =========================================================
+
+def generate_ai_response(
+    message: str,
+    history: Optional[List[ChatMessage]] = None
+):
+
+    if not GROQ_API_KEY:
         raise HTTPException(
             status_code=500,
-            detail="GROQ_API_KEY is not configured."
+            detail="GROQ_API_KEY is not configured on the server."
         )
 
-    if client is None:
-
+    if groq_client is None:
         raise HTTPException(
             status_code=500,
             detail="Groq client is not initialized."
         )
-
-
-# ============================================================
-# 8. GENERATE AI RESPONSE
-# ============================================================
-
-def generate_ai_response(
-    user_message: str,
-    history: List[ChatMessage]
-):
-
-    check_groq_configuration()
 
     messages = [
         {
@@ -230,267 +178,176 @@ def generate_ai_response(
         }
     ]
 
-    # --------------------------------------------------------
-    # Add last 10 messages
-    # --------------------------------------------------------
+    # Add previous conversation
+    if history:
 
-    for item in history[-10:]:
+        for item in history:
 
-        messages.append(
-            {
-                "role": item.role,
-                "content": item.content
-            }
-        )
+            if item.role in ["user", "assistant"]:
 
-    # --------------------------------------------------------
-    # Add current user message
-    # --------------------------------------------------------
+                messages.append(
+                    {
+                        "role": item.role,
+                        "content": item.content
+                    }
+                )
 
+    # Add current question
     messages.append(
         {
             "role": "user",
-            "content": user_message.strip()
+            "content": message
         }
     )
 
     try:
 
-        # ----------------------------------------------------
-        # Groq API request
-        # ----------------------------------------------------
-
-        completion = client.chat.completions.create(
-
+        response = groq_client.chat.completions.create(
             model="openai/gpt-oss-120b",
-
             messages=messages,
-
             temperature=0.4,
-
             max_tokens=1200
         )
 
-        # ----------------------------------------------------
-        # Check response
-        # ----------------------------------------------------
+        answer = response.choices[0].message.content
 
-        if not completion.choices:
+        if not answer:
+            answer = "Sorry, I could not generate a response."
 
-            raise HTTPException(
-                status_code=502,
-                detail="AI returned no response."
-            )
-
-        reply = (
-            completion
-            .choices[0]
-            .message
-            .content
-        )
-
-        if not reply:
-
-            raise HTTPException(
-                status_code=502,
-                detail="AI returned an empty response."
-            )
-
-        reply = reply.strip()
-
-        if not reply:
-
-            raise HTTPException(
-                status_code=502,
-                detail="AI returned an empty response."
-            )
-
-        return ChatResponse(
-
-            reply=reply,
-
-            model="openai/gpt-oss-120b"
-        )
-
-    except HTTPException:
-
-        raise
+        return answer
 
     except Exception as error:
 
-        print(
-            "\n========== GROQ ERROR =========="
-        )
-
-        print(
-            "Error Type:",
-            type(error).__name__
-        )
-
-        print(
-            "Error:",
-            str(error)
-        )
-
-        traceback.print_exc()
-
-        print(
-            "================================\n"
-        )
+        print("Groq API Error:", error)
 
         raise HTTPException(
-
-            status_code=502,
-
-            detail="Unable to get response from Groq AI."
+            status_code=500,
+            detail=f"AI service error: {str(error)}"
         )
 
 
-# ============================================================
-# 9. ROOT ENDPOINT
-# ============================================================
+# =========================================================
+# ROOT
+# =========================================================
 
 @app.get("/")
 def root():
 
     return {
-
         "success": True,
-
         "message": "DevFlow X AI Service is running",
-
         "status": "online",
-
         "service": "FastAPI",
-
         "version": "1.0.0"
     }
 
 
-# ============================================================
-# 10. SIMPLE HEALTH ENDPOINT
-# ============================================================
+# =========================================================
+# HEALTH
+# =========================================================
 
 @app.get("/health")
 def health():
 
+    groq_ok, groq_message = check_groq_configuration()
+
     return {
-
         "success": True,
-
+        "service": "FastAPI",
         "status": "healthy",
-
-        "service": "DevFlow X AI Service"
+        "groq_configured": groq_ok,
+        "groq_message": groq_message
     }
 
 
-# ============================================================
-# 11. FASTAPI CONNECTION TEST
-# ============================================================
+# =========================================================
+# TEST FASTAPI
+# =========================================================
 
 @app.get("/api/test-fastapi")
 def test_fastapi():
 
     return {
-
         "success": True,
-
-        "message": "FastAPI is connected successfully",
-
-        "service": "DevFlow X AI Service",
-
+        "message": "FastAPI connection successful",
+        "service": "FastAPI",
         "status": "online"
     }
 
 
-# ============================================================
-# 12. AI HEALTH CHECK
-# ============================================================
+# =========================================================
+# AI HEALTH
+# =========================================================
 
 @app.get("/api/ai/health")
 def ai_health():
 
-    if not GROQ_API_KEY:
-
-        return {
-
-            "success": False,
-
-            "status": "not_configured",
-
-            "message": "GROQ_API_KEY is missing",
-
-            "groq": False
-        }
-
-    if client is None:
-
-        return {
-
-            "success": False,
-
-            "status": "not_configured",
-
-            "message": "Groq client is not initialized",
-
-            "groq": False
-        }
+    groq_ok, groq_message = check_groq_configuration()
 
     return {
-
         "success": True,
-
-        "status": "healthy",
-
-        "message": "Groq AI service is configured",
-
-        "groq": True
+        "service": "AI",
+        "status": "ready" if groq_ok else "not_ready",
+        "groq_configured": groq_ok,
+        "message": groq_message
     }
 
 
-# ============================================================
-# 13. CHAT API
-# ============================================================
+# =========================================================
+# AI ASK
+# =========================================================
 
-@app.post(
-    "/api/ai/chat",
-    response_model=ChatResponse
-)
-def chat_with_ai(
-    request: ChatRequest
-):
+@app.post("/api/ai/ask")
+def ask_ai(request: AskRequest):
 
-    return generate_ai_response(
+    if not request.question.strip():
 
-        user_message=request.message,
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty."
+        )
 
-        history=request.history
+    answer = generate_ai_response(
+        request.question,
+        request.history
     )
 
+    return {
+        "success": True,
+        "question": request.question,
+        "answer": answer
+    }
 
-# ============================================================
-# 14. ASK API
-# ============================================================
 
-@app.post(
-    "/api/ai/ask",
-    response_model=ChatResponse
-)
-def ask_ai(
-    request: AskRequest
-):
+# =========================================================
+# AI CHAT
+# =========================================================
 
-    return generate_ai_response(
+@app.post("/api/ai/chat")
+def chat_ai(request: ChatRequest):
 
-        user_message=request.question,
+    if not request.message.strip():
 
-        history=request.history
+        raise HTTPException(
+            status_code=400,
+            detail="Message cannot be empty."
+        )
+
+    answer = generate_ai_response(
+        request.message,
+        request.history
     )
 
+    return {
+        "success": True,
+        "message": request.message,
+        "answer": answer
+    }
 
-# ============================================================
-# 15. START SERVER
-# ============================================================
+
+# =========================================================
+# RUN LOCALLY
+# =========================================================
 
 if __name__ == "__main__":
 
@@ -504,12 +361,8 @@ if __name__ == "__main__":
     )
 
     uvicorn.run(
-
         "app.main:app",
-
         host="0.0.0.0",
-
         port=port,
-
-        reload=False
+        reload=True
     )
