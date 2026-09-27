@@ -1,10 +1,7 @@
-import API_URL from "../config/api";
-
-// ==================================================
-// AI API BASE URL
-// ==================================================
-
-const AI_API_URL = `${API_URL}/ai`;
+import {
+  API_URL,
+  FASTAPI_URL
+} from "../config/api";
 
 
 // ==================================================
@@ -14,6 +11,10 @@ const AI_API_URL = `${API_URL}/ai`;
 
 export async function testBackend() {
   try {
+    console.log(
+      "Testing Express:",
+      `${API_URL}/health`
+    );
 
     const response = await fetch(
       `${API_URL}/health`,
@@ -32,16 +33,20 @@ export async function testBackend() {
         data.message ||
         data.detail ||
         data.error ||
-        `Backend health check failed: ${response.status}`
+        `Express backend failed: ${response.status}`
       );
     }
+
+    console.log(
+      "Express backend response:",
+      data
+    );
 
     return data;
 
   } catch (error) {
-
     console.error(
-      "Backend health error:",
+      "Express backend error:",
       error
     );
 
@@ -51,15 +56,19 @@ export async function testBackend() {
 
 
 // ==================================================
-// TEST EXPRESS → FASTAPI
-// GET /api/ai/test-fastapi
+// TEST FASTAPI DIRECTLY
+// GET /api/test-fastapi
 // ==================================================
 
 export async function testFastAPI() {
   try {
+    console.log(
+      "Testing FastAPI:",
+      `${FASTAPI_URL}/api/test-fastapi`
+    );
 
     const response = await fetch(
-      `${AI_API_URL}/test-fastapi`,
+      `${FASTAPI_URL}/api/test-fastapi`,
       {
         method: "GET",
         headers: {
@@ -79,10 +88,14 @@ export async function testFastAPI() {
       );
     }
 
+    console.log(
+      "FastAPI response:",
+      data
+    );
+
     return data;
 
   } catch (error) {
-
     console.error(
       "FastAPI connection error:",
       error
@@ -94,15 +107,19 @@ export async function testFastAPI() {
 
 
 // ==================================================
-// CHECK AI HEALTH
+// CHECK FASTAPI AI HEALTH
 // GET /api/ai/health
 // ==================================================
 
 export async function checkAIHealth() {
   try {
+    console.log(
+      "Checking AI Health:",
+      `${FASTAPI_URL}/api/ai/health`
+    );
 
     const response = await fetch(
-      `${AI_API_URL}/health`,
+      `${FASTAPI_URL}/api/ai/health`,
       {
         method: "GET",
         headers: {
@@ -122,12 +139,16 @@ export async function checkAIHealth() {
       );
     }
 
+    console.log(
+      "AI health response:",
+      data
+    );
+
     return data;
 
   } catch (error) {
-
     console.error(
-      "AI health check error:",
+      "AI health error:",
       error
     );
 
@@ -145,11 +166,14 @@ export async function askAI(
   question,
   history = []
 ) {
-
   try {
+    console.log(
+      "Sending question to FastAPI:",
+      question
+    );
 
     const response = await fetch(
-      `${AI_API_URL}/ask`,
+      `${FASTAPI_URL}/api/ai/ask`,
       {
         method: "POST",
 
@@ -159,51 +183,44 @@ export async function askAI(
         },
 
         body: JSON.stringify({
-          message: question,
+          question: question,
           history: history
         })
       }
     );
 
-
     const responseText =
       await response.text();
 
-
     let data;
 
-
     try {
-
       data = JSON.parse(
         responseText
       );
-
     } catch {
-
       throw new Error(
-        `Invalid server response. Status: ${response.status}`
+        `Invalid FastAPI response. Status: ${response.status}`
       );
-
     }
 
-
     if (!response.ok) {
-
       throw new Error(
         data.message ||
         data.detail ||
         data.error ||
         `AI request failed: ${response.status}`
       );
-
     }
 
+    console.log(
+      "AI response:",
+      data
+    );
 
     return data;
 
   } catch (error) {
-
     console.error(
       "AI request error:",
       error
@@ -223,11 +240,14 @@ export async function chatAI(
   message,
   history = []
 ) {
-
   try {
+    console.log(
+      "Sending chat message to FastAPI:",
+      message
+    );
 
     const response = await fetch(
-      `${AI_API_URL}/chat`,
+      `${FASTAPI_URL}/api/ai/chat`,
       {
         method: "POST",
 
@@ -243,45 +263,38 @@ export async function chatAI(
       }
     );
 
-
     const responseText =
       await response.text();
 
-
     let data;
 
-
     try {
-
       data = JSON.parse(
         responseText
       );
-
     } catch {
-
       throw new Error(
-        `Invalid server response. Status: ${response.status}`
+        `Invalid FastAPI response. Status: ${response.status}`
       );
-
     }
 
-
     if (!response.ok) {
-
       throw new Error(
         data.message ||
         data.detail ||
         data.error ||
         `AI chat failed: ${response.status}`
       );
-
     }
 
+    console.log(
+      "Chat AI response:",
+      data
+    );
 
     return data;
 
   } catch (error) {
-
     console.error(
       "AI chat error:",
       error
