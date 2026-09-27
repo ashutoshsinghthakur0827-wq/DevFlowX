@@ -37,27 +37,45 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
 
-    // Local development
+    // --------------------------------------------------------
+    // LOCAL DEVELOPMENT
+    // --------------------------------------------------------
+
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 
-    // Current Vercel frontend
+
+    // --------------------------------------------------------
+    // CURRENT VERCEL FRONTEND
+    // --------------------------------------------------------
+
     "https://dev-flow-kbu9odobi-hack-tech.vercel.app",
 
-    // Previous Vercel deployments
-    "https://dev-flow-7nbl3z6xl-hack-tech.vercel.app",
+
+    // --------------------------------------------------------
+    // PREVIOUS VERCEL DEPLOYMENTS
+    // --------------------------------------------------------
+
     "https://dev-flow-dwve5i1kz-hack-tech.vercel.app",
+
+    "https://dev-flow-7nbl3z6xl-hack-tech.vercel.app",
+
     "https://dev-flow-x.vercel.app",
 
-    // Other frontend deployment
-    "https://devflowx-frontend.onrender.com",
+
+    // --------------------------------------------------------
+    // OTHER FRONTEND DEPLOYMENT
+    // --------------------------------------------------------
+
+    "https://devflowx-frontend.onrender.com"
 ];
 
 
 // ============================================================
-// CLIENT URL FROM RENDER ENVIRONMENT
+// CLIENT URL FROM ENVIRONMENT
 // ============================================================
 
 if (process.env.CLIENT_URL) {
@@ -74,22 +92,35 @@ if (process.env.CLIENT_URL) {
 
 const uniqueOrigins = [
     ...new Set(
-        allowedOrigins
+        allowedOrigins.filter(Boolean)
     )
 ];
 
 
+// ============================================================
+// PRINT CORS ORIGINS
+// ============================================================
+
 console.log(
-    "Allowed CORS origins:"
+    "=========================================="
+);
+
+console.log(
+    "Allowed CORS Origins:"
 );
 
 uniqueOrigins.forEach(
     (origin) => {
+
         console.log(
             " -",
             origin
         );
     }
+);
+
+console.log(
+    "=========================================="
 );
 
 
@@ -105,13 +136,9 @@ app.use(
             callback
         ) {
 
-            // Allow requests without
-            // an Origin header.
-            //
-            // Examples:
-            // Postman
-            // curl
-            // server-to-server requests
+            // ------------------------------------------------
+            // Allow requests without Origin
+            // ------------------------------------------------
 
             if (!origin) {
 
@@ -122,7 +149,9 @@ app.use(
             }
 
 
+            // ------------------------------------------------
             // Check allowed origins
+            // ------------------------------------------------
 
             if (
                 uniqueOrigins.includes(
@@ -137,7 +166,9 @@ app.use(
             }
 
 
+            // ------------------------------------------------
             // Block unknown origin
+            // ------------------------------------------------
 
             console.log(
                 "Blocked CORS origin:",
@@ -152,8 +183,16 @@ app.use(
         },
 
 
+        // ----------------------------------------------------
+        // Credentials
+        // ----------------------------------------------------
+
         credentials: true,
 
+
+        // ----------------------------------------------------
+        // HTTP Methods
+        // ----------------------------------------------------
 
         methods: [
             "GET",
@@ -165,6 +204,10 @@ app.use(
         ],
 
 
+        // ----------------------------------------------------
+        // Headers
+        // ----------------------------------------------------
+
         allowedHeaders: [
             "Content-Type",
             "Authorization"
@@ -174,13 +217,20 @@ app.use(
 
 
 // ============================================================
-// PREFLIGHT REQUEST
+// IMPORTANT
 // ============================================================
-
-app.options(
-    "*",
-    cors()
-);
+//
+// DO NOT ADD:
+//
+// app.options("*", cors());
+//
+// Express 5 + path-to-regexp can throw:
+//
+// PathError: Missing parameter name at index 1: *
+//
+// The cors middleware above already handles CORS
+// preflight requests.
+// ============================================================
 
 
 // ============================================================
@@ -189,7 +239,7 @@ app.options(
 
 app.use(
     express.json({
-        limit: "10mb",
+        limit: "10mb"
     })
 );
 
@@ -197,7 +247,7 @@ app.use(
 app.use(
     express.urlencoded({
         extended: true,
-        limit: "10mb",
+        limit: "10mb"
     })
 );
 
@@ -210,7 +260,7 @@ app.use(
     (req, res, next) => {
 
         console.log(
-            `${req.method} ${req.originalUrl}`
+            `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
         );
 
         next();
@@ -219,14 +269,14 @@ app.use(
 
 
 // ============================================================
-// ROOT
+// ROOT ROUTE
 // ============================================================
 
 app.get(
     "/",
     (req, res) => {
 
-        res.json({
+        res.status(200).json({
 
             success: true,
 
@@ -236,41 +286,44 @@ app.get(
             service:
                 "Express API",
 
+            status:
+                "online",
+
             environment:
                 process.env.NODE_ENV ||
-                "development",
+                "development"
         });
     }
 );
 
 
 // ============================================================
-// HEALTH
+// HEALTH ROUTE
 // ============================================================
 
 app.get(
     "/api/health",
     (req, res) => {
 
-        res.json({
+        res.status(200).json({
 
             success: true,
 
             message:
                 "Express backend is healthy",
 
-            cors: true,
+            service:
+                "Express API",
 
-            frontend:
-                process.env.CLIENT_URL ||
-                "configured in server",
+            status:
+                "online"
         });
     }
 );
 
 
 // ============================================================
-// API ROUTES
+// AUTH ROUTES
 // ============================================================
 
 app.use(
@@ -279,17 +332,29 @@ app.use(
 );
 
 
+// ============================================================
+// PROJECT ROUTES
+// ============================================================
+
 app.use(
     "/api/projects",
     projectRoutes
 );
 
 
+// ============================================================
+// TASK ROUTES
+// ============================================================
+
 app.use(
     "/api/tasks",
     taskRoutes
 );
 
+
+// ============================================================
+// TEAM ROUTES
+// ============================================================
 
 app.use(
     "/api/teams",
@@ -313,17 +378,27 @@ app.use(
 
 async function connectDatabase() {
 
-    if (
-        !process.env.MONGO_URI
-    ) {
+    // --------------------------------------------------------
+    // Check MongoDB URI
+    // --------------------------------------------------------
+
+    if (!process.env.MONGO_URI) {
 
         console.log(
             "MONGO_URI is not configured."
         );
 
+        console.log(
+            "Server will continue without MongoDB."
+        );
+
         return;
     }
 
+
+    // --------------------------------------------------------
+    // Connect MongoDB
+    // --------------------------------------------------------
 
     try {
 
@@ -341,20 +416,22 @@ async function connectDatabase() {
             "MongoDB connection error:",
             error.message
         );
+
+        // Do not crash the entire server
+        // because of database connection failure.
+
     }
 }
 
 
 // ============================================================
-// 404
+// 404 HANDLER
 // ============================================================
 
 app.use(
     (req, res) => {
 
-        res.status(
-            404
-        ).json({
+        res.status(404).json({
 
             success: false,
 
@@ -362,7 +439,7 @@ app.use(
                 "Route not found",
 
             path:
-                req.originalUrl,
+                req.originalUrl
         });
     }
 );
@@ -386,6 +463,33 @@ app.use(
         );
 
 
+        // ----------------------------------------------------
+        // CORS error
+        // ----------------------------------------------------
+
+        if (
+            error.message ===
+            "Not allowed by CORS"
+        ) {
+
+            return res.status(403).json({
+
+                success: false,
+
+                message:
+                    "CORS policy blocked this origin",
+
+                origin:
+                    req.headers.origin ||
+                    null
+            });
+        }
+
+
+        // ----------------------------------------------------
+        // General error
+        // ----------------------------------------------------
+
         res.status(
             error.status ||
             500
@@ -395,7 +499,7 @@ app.use(
 
             message:
                 error.message ||
-                "Internal server error",
+                "Internal server error"
         });
     }
 );
@@ -407,8 +511,16 @@ app.use(
 
 async function startServer() {
 
+    // --------------------------------------------------------
+    // Database
+    // --------------------------------------------------------
+
     await connectDatabase();
 
+
+    // --------------------------------------------------------
+    // Start Express
+    // --------------------------------------------------------
 
     app.listen(
         PORT,
@@ -416,9 +528,18 @@ async function startServer() {
         () => {
 
             console.log(
+                "=========================================="
+            );
+
+            console.log(
                 `DevFlow X backend running on port ${PORT}`
             );
 
+            console.log(
+                "Environment:",
+                process.env.NODE_ENV ||
+                "development"
+            );
 
             console.log(
                 "AI service configured:",
@@ -427,15 +548,22 @@ async function startServer() {
                 )
             );
 
-
             console.log(
                 "AI service URL:",
                 process.env.AI_SERVICE_URL ||
                 "NOT CONFIGURED"
             );
+
+            console.log(
+                "=========================================="
+            );
         }
     );
 }
 
+
+// ============================================================
+// START APPLICATION
+// ============================================================
 
 startServer();
